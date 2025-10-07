@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">EduApp</string>
+
+<!--    Language Selection Screen -->
+    <string name="select_your_language">Select Your Language</string>
+    <string name="language_icon_desc">Language Icon</string>
+    <string name="language_subtitle">Choose your preferred language for the AI tutoring experience</string>
+    <string name="select_language_label">Select Language / भाषा चुनें / ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ / భాష ఎంచుకోండి</string>
+
+    <string name="lang_english">English</string>
+    <string name="lang_kannada">Kannada</string>
+    <string name="lang_hindi">Hindi</string>
+    <string name="lang_telugu">Telugu</string>
+    <string name="tamil">Tamil</string>
+
+    <string name="google_sign_in">Continue with Google</string>
+
 </resources>

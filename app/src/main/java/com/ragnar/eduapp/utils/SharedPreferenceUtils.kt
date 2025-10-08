@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 
-object GoogleUserPrefs {
+object SharedPreferenceUtils {
 
     private const val PREF_NAME = "user_prefs"
 

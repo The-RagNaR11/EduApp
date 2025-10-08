@@ -1,5 +1,7 @@
 package com.ragnar.eduapp.ui.screens.sign_up
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -14,15 +16,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.ui.components.LanguageOptionModel
 import com.ragnar.eduapp.ui.theme.*
+import com.ragnar.eduapp.utils.SharedPreferenceUtils
 
 /**
  * A UI screen that will show multiple Language option and A Google Sign Button
@@ -34,7 +40,9 @@ import com.ragnar.eduapp.ui.theme.*
  * and saves the user Details in SharedPreference
  */
 @Composable
-fun LanguageSelectionScreen() {
+fun LanguageSelectionScreen(navController: NavController) {
+
+    val context: Context = LocalContext.current
 
     val headlineTextSize = MaterialTheme.typography.headlineLarge.fontSize
 
@@ -81,7 +89,8 @@ fun LanguageSelectionScreen() {
                 Text(
                     text = stringResource(R.string.select_your_language),
                     color = TextPrimary,
-                    style = MaterialTheme.typography.headlineLarge
+                    style = MaterialTheme.typography.headlineLarge,
+                    textAlign = TextAlign.Center
                 )
             }
 
@@ -92,6 +101,7 @@ fun LanguageSelectionScreen() {
                     color = TextSecondary,
                     fontSize = 15.sp
                 ),
+                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
@@ -121,10 +131,21 @@ fun LanguageSelectionScreen() {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Confirm Button
+            /**
+             * A button with Continue Text
+             * On click ->
+             *  1. it will log the selected language
+             *  2. It will save the selected language to SharedPreference with the help of SharedPreferenceUtils class
+             */
             Button(
                 onClick = {
                     Log.i("LanguageSelectionScreen", "Confirm Button Clicked with selected Language: $selectedLanguage")
+
+                    // Saves the selected language to Shared Preference
+                    SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_LANGUAGE, selectedLanguage)
+                    // Navigate to the GoogleSignUpScreen
+                    // using navController because if needed user can press back-button and come back to select language Screen
+                    navController.navigate("googleSignUp")
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
                 shape = RoundedCornerShape(8.dp),
@@ -134,7 +155,7 @@ fun LanguageSelectionScreen() {
                     .padding(horizontal = 20.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.google_sign_in),
+                    text = stringResource(R.string.continue_),
                     color = White,
                     style = MaterialTheme.typography.bodyLarge
                 )

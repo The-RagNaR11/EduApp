@@ -6,13 +6,16 @@
     <string name="language_icon_desc">Language Icon</string>
     <string name="language_subtitle">Choose your preferred language for the AI tutoring experience</string>
     <string name="select_language_label">Select Language / भाषा चुनें / ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ / భాష ఎంచుకోండి</string>
-
+    <string name="continue_">Continue</string>
     <string name="lang_english">English</string>
     <string name="lang_kannada">Kannada</string>
     <string name="lang_hindi">Hindi</string>
     <string name="lang_telugu">Telugu</string>
     <string name="tamil">Tamil</string>
 
+<!--    Google Sign up Screen-->
     <string name="google_sign_in">Continue with Google</string>
-
+    <string name="ai_tutor_platform">AI Tutor Platform</string>
+    <string name="personilized_learning_message">Personalized learning for students from \n Class 1st to 10th</string>
+    <string name="welcome_back">Welcome back !</string>
 </resources>

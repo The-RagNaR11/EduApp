@@ -12,10 +12,10 @@ val AccentGreen = Color(0xFF22C55E)  // Emerald – user chat bubble
 val AccentBlue = Color(0xFF3B82F6)   // Bright blue – highlights, links, or icons
 
 // Background Colors
-val BackgroundPrimary = Color(0xFFF8FAFC)  // Main background (soft off-white)
+val BackgroundPrimary = Color(0xFFF8F9FF)  // Main background (soft off-white)
 val BackgroundSecondary = Color(0xFFE2E8F0) // Card and input background
-val AiMessageBackground = Color(0xFFEFF1FB) // AI chat bubble (light indigo hint)
-val ChipBackground = Color(0xFFEEF2FF)      // Status chip background (soft indigo tint)
+val AiMessageBackground = Color(0xFF9193A9) // AI chat bubble (light indigo hint)
+val ChipBackground = Color(0xFFC9CDE1)      // Status chip background (soft indigo tint)
 
 // Text Colors
 val TextPrimary = Color(0xFF111827)      // Main headings

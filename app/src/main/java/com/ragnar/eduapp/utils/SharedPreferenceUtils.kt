@@ -14,6 +14,9 @@ object SharedPreferenceUtils {
     const val KEY_DISPLAY_NAME = "display_name"
     const val KEY_PROFILE_PIC = "profile_picture_uri"
     const val KEY_LANGUAGE = "selected_language"
+    const val KEY_PHONE_NUMBER = "phone_number"
+    const val KEY_SCHOOL_NAME = "school_name"
+    const val KEY_AMBITION = "ambition"
 
     // Initialize the sharedPreference Instance
     private fun getPrefs(context: Context): SharedPreferences {
@@ -32,12 +35,18 @@ object SharedPreferenceUtils {
 
     // to perform logout or clear session after a particular time period
     fun clearUserInfo(context: Context) {
-        getPrefs(context).edit().clear().apply()
+        getPrefs(context).edit { clear() }
     }
 
     // to check if user is logged in
     fun isUserLoggedIn(context: Context): Boolean {
         val prefs = getPrefs(context)
         return prefs.contains(KEY_ID) && prefs.contains(KEY_EMAIL)
+    }
+
+    // to check if user has entered the details or not
+    fun isUserDetailAvailable(context: Context): Boolean {
+        val prefs = getPrefs(context)
+        return prefs.contains(KEY_PHONE_NUMBER)
     }
 }

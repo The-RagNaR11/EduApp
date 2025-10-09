@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.ui.components.LanguageOptionModel
+import com.ragnar.eduapp.ui.components.SignUpPageFooterModel
 import com.ragnar.eduapp.ui.theme.*
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
 
@@ -53,8 +55,7 @@ fun LanguageSelectionScreen(navController: NavController) {
         stringResource(R.string.lang_english),
         stringResource(R.string.lang_kannada),
         stringResource(R.string.lang_hindi),
-        stringResource(R.string.lang_telugu),
-        stringResource(R.string.tamil)
+        stringResource(R.string.lang_telugu)
     )
 
     Surface(
@@ -71,6 +72,18 @@ fun LanguageSelectionScreen(navController: NavController) {
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Transparent),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = "Logo",
+                    modifier = Modifier.height(150.dp)
+                )
+            }
             // Title Row
             Row(
                 modifier = Modifier
@@ -160,6 +173,8 @@ fun LanguageSelectionScreen(navController: NavController) {
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
+            Spacer(modifier = Modifier.weight(1f))
+            SignUpPageFooterModel()
         }
     }
 }

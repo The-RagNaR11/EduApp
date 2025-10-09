@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 // Base Colors
 val Black = Color(0xFF0E0E10)
 val White = Color(0xFFFFFFFF)
+val LightGray = Color(0xFFE0E0E0)
 
 // Brand & Accent Colors
 val BrandPrimary = Color(0xFF6366F1) // Indigo – app identity (send button, active elements)
@@ -14,8 +15,8 @@ val AccentBlue = Color(0xFF3B82F6)   // Bright blue – highlights, links, or ic
 // Background Colors
 val BackgroundPrimary = Color(0xFFF8F9FF)  // Main background (soft off-white)
 val BackgroundSecondary = Color(0xFFE2E8F0) // Card and input background
-val AiMessageBackground = Color(0xFF9193A9) // AI chat bubble (light indigo hint)
-val ChipBackground = Color(0xFFC9CDE1)      // Status chip background (soft indigo tint)
+val AiMessageBackground = Color(0xFFD7D9FF) // AI chat bubble (light indigo hint)
+val ChipBackground = Color(0xFFE7EAFC)      // Status chip background (soft indigo tint)
 
 // Text Colors
 val TextPrimary = Color(0xFF111827)      // Main headings

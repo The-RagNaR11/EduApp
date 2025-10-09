@@ -7,6 +7,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,8 +27,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.sourceInformationMarkerEnd
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusModifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -36,10 +40,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.core.GoogleSignIn
+import com.ragnar.eduapp.ui.components.SignUpPageFooterModel
 import com.ragnar.eduapp.ui.theme.BackgroundPrimary
 import com.ragnar.eduapp.ui.theme.BackgroundSecondary
 import com.ragnar.eduapp.ui.theme.ChipBackground
 import com.ragnar.eduapp.ui.theme.ColorHint
+import com.ragnar.eduapp.ui.theme.SendButtonColor
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary
 import com.ragnar.eduapp.ui.theme.White
@@ -51,6 +57,11 @@ fun GoogleSignInScreen(navController: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    /**
+     * Using rememberLauncherForActivityResult to keep the launcher alive and stable
+     * Even if there is an UI update
+     * It is useful because creating new launcher each time UI updates will break the result
+     */
     val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
         GoogleSignIn.doGoogleSignIn(
             context = context,
@@ -71,12 +82,13 @@ fun GoogleSignInScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(BackgroundPrimary)
-                .padding(10.dp),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ){
+            Spacer(modifier = Modifier.weight(1f))
             Card (
-                border = BorderStroke(1.dp, ColorHint),
+//                border = BorderStroke(1.dp, ColorHint),
                 elevation = CardDefaults.elevatedCardElevation(10.dp)
             ) {
                 Column (
@@ -87,6 +99,19 @@ fun GoogleSignInScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    Spacer(modifier = Modifier.padding(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Transparent),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.logo),
+                            contentDescription = "Logo",
+                            modifier = Modifier.height(150.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.padding(10.dp))
                     Text(
                         text = stringResource(R.string.ai_tutor_platform),
@@ -102,13 +127,24 @@ fun GoogleSignInScreen(navController: NavController) {
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.padding(10.dp))
+
+
+                    /**
+                     * A button to with Google ICON and Continue with Google Text
+                     * onClick ->
+                     *  1. It will call the GoogleSignIn class which has a helper object doGoogleSignIn
+                     *  2. On successful login it will return the GoogleUserInfo class
+                     *  3. The details that re passed on success are stored on sharedPreference for later use
+                     *  4. The it will navigate to the UserDetailEntryScreen and clear the back-stach so user can't
+                     *  go back to GoogleSignInScreen
+                     */
                     Button(
-                        colors = ButtonDefaults.buttonColors(containerColor = ChipBackground),
+                        colors = ButtonDefaults.buttonColors(containerColor = ColorHint),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp)
-                            .padding(horizontal = 20.dp),
+                            .padding(horizontal = 50.dp),
                         onClick = {
                             Log.i("SignUpScreen", "Google Sign In Button Clicked")
 
@@ -121,6 +157,22 @@ fun GoogleSignInScreen(navController: NavController) {
                                     SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_EMAIL, userInfo.email)
                                     SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_DISPLAY_NAME, userInfo.displayName)
                                     SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_PROFILE_PIC, userInfo.profilePictureUri)
+
+                                    val phoneNumber = SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_PHONE_NUMBER)
+
+                                    if (SharedPreferenceUtils.isUserLoggedIn(context)) {
+                                        if (phoneNumber.isNullOrEmpty()) {
+                                            // If phone number is empty → go to user detail entry
+                                            navController.navigate("userDetailEntry") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
+                                        } else {
+                                            // If phone number exists → go to study session setup
+                                            navController.navigate("studySessionSetup") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
+                                        }
+                                    }
 
 
                                 }
@@ -154,7 +206,8 @@ fun GoogleSignInScreen(navController: NavController) {
                     Spacer(modifier = Modifier.padding(10.dp))
                 }
             }
-
+            Spacer(modifier = Modifier.weight(1f))
+            SignUpPageFooterModel()
         }
     }
 }

@@ -1,30 +1,64 @@
 package com.ragnar.eduapp.ui.screens.sign_up
 
+import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ragnar.eduapp.ui.theme.*
+import androidx.navigation.NavController
+import com.ragnar.eduapp.R
+import com.ragnar.eduapp.ui.components.DropDownMenuModel
+import com.ragnar.eduapp.ui.theme.BackgroundPrimary
+import com.ragnar.eduapp.ui.theme.BrandPrimary
+import com.ragnar.eduapp.ui.theme.ColorHint
+import com.ragnar.eduapp.ui.theme.IconSecondary
+import com.ragnar.eduapp.ui.theme.TextOnPrimary
+import com.ragnar.eduapp.ui.theme.TextPrimary
+import com.ragnar.eduapp.ui.theme.TextSecondary
+import com.ragnar.eduapp.ui.theme.White
+import com.ragnar.eduapp.ui.theme.textFieldBackgroundColor
+import com.ragnar.eduapp.utils.SharedPreferenceUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StudentLevelAssessmentScreen(
-    onSubmit: (String, String) -> Unit = { _, _ -> }
-) {
+fun StudentLevelAssessmentScreen(navController: NavController) {
+    val context = LocalContext.current
+
     var selectedClass by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) }
+
     val classOptions = (1..10).map { "Class $it" }
 
-    var selectedPace by remember { mutableStateOf("Medium-paced learner") }
+    var selectedPace by remember { mutableStateOf("") }
+
     val paceOptions = listOf(
         "Fast-paced learner - I grasp concepts quickly and like to move ahead",
         "Medium-paced learner - I like a balanced approach to learning",
@@ -74,55 +108,13 @@ fun StudentLevelAssessmentScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Dropdown Label
-                Text(
-                    text = "Select Your Class",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = TextPrimary,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
                 // Dropdown Menu
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
-                    TextField(
-                        readOnly = true,
-                        value = selectedClass.ifEmpty { "Choose your class (1st - 10th)" },
-                        onValueChange = {},
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = textFieldBackgroundColor,
-                            unfocusedContainerColor = textFieldBackgroundColor,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextSecondary,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        classOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    selectedClass = option
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
+                DropDownMenuModel(
+                    label = stringResource(R.string.select_class_label),
+                    options = classOptions,
+                    selectedValue = selectedClass,
+                    onValueSelected = { selectedClass = it },
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -172,15 +164,23 @@ fun StudentLevelAssessmentScreen(
                 // Submit Button
                 Button(
                     onClick = {
-                        if (selectedClass.isNotEmpty()) {
-                            onSubmit(selectedClass, selectedPace)
+                        Log.d("StudentLevelAssessmentScreen", "Class: $selectedClass \n Learning Pace: $selectedPace")
+                        SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_PACE, selectedPace)
+                        SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_CLASS, selectedClass)
+
+                        navController.navigate("studySessionSetUp") {
+                            popUpTo(0) {inclusive = true}
                         }
                     },
+                    enabled = selectedClass.isNotEmpty() && selectedPace.isNotEmpty(),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BrandPrimary,
+                        disabledContainerColor = ColorHint
+                    )
                 ) {
                     Text(
                         text = "Set Learning Preferences",
@@ -190,6 +190,7 @@ fun StudentLevelAssessmentScreen(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

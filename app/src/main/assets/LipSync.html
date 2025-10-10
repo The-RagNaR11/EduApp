@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-t" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Android Lip Sync</title>
+  <style>
+    /* Basic styling for seamless integration */
+    body {
+        background: transparent; /* Allows Compose background to show through */
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        overflow: hidden; /* Prevents scrollbars */
+    }
+
+    .container {
+        text-align: center;
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .stage {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    .character {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+
+    /* Mouth overlay - Now responsive using percentages */
+    .mouth-container {
+        position: absolute;
+        left: 50%;
+        top: 48%;
+        top: 48%;
+        transform: translate(-50%, -30%); /* Center horizontally, position vertically relative to center */
+        width: 12%;  /* Responsive width relative to container */
+        height: 12%;  /* Responsive height relative to container */
+        pointer-events: none;
+        min-width: 40px;  /* Minimum size for very small screens */
+        min-height: 30px;
+        max-width: 250px; /* Maximum size for very large screens */
+        max-height: 80px;
+    }
+
+    svg.mouth {
+        width: 100%;
+        height: 100%;
+    }
+
+    .mouth-set g {
+        opacity: 0;
+        transition: opacity 80ms ease-out;
+    }
+    .mouth-set g.active {
+        opacity: 1;
+    }
+
+
+
+    /* Debug overlay */
+    .debug-info {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #0f0;
+        font-family: monospace;
+        padding: 5px;
+        border-radius: 4px;
+        font-size: 12px;
+        display: none; /* Hidden by default */
+        text-align: left;
+    }
+    .container.debug-mode .debug-info {
+        display: block; /* Show when in debug mode */
+    }
+
+    /* Responsive adjustments for different screen sizes */
+    @media (max-width: 480px) {
+        .mouth-container {
+            width: 15%;
+            height: 10%;
+            transform: translate(-50%, -25%);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .mouth-container {
+            width: 10%;
+            height: 6%;
+            transform: translate(-50%, -35%);
+        }
+    }
+
+    /* Additional responsive adjustments for very wide or tall screens */
+    @media (aspect-ratio > 2/1) {
+        .mouth-container {
+            width: 8%;
+            height: 12%;
+        }
+    }
+
+    @media (aspect-ratio < 1/2) {
+        .mouth-container {
+            width: 18%;
+            height: 6%;
+        }
+    }
+  </style>
+</head>
+<body>
+<div class="container" id="container">
+  <div class="stage">
+    <img id="characterImage" src="images/boy.png" class="character" alt="Character"/>
+    <div class="mouth-container">
+      <svg class="mouth" viewBox="-50 -50 100 100">
+        <g class="mouth-set" id="mouthSet">
+          <g data-viseme="rest"><path d="M-26 6 q26 10 52 0" fill="#c33" stroke="#000" stroke-width="1"/></g>
+          <g data-viseme="closed"><rect x="-30" y="-6" width="60" height="12" rx="6" fill="#9b2b2b"/></g>
+          <g data-viseme="wide"><ellipse cx="0" cy="6" rx="42" ry="14" fill="#9b2b2b"/></g>
+          <g data-viseme="open"><ellipse cx="0" cy="8" rx="36" ry="22" fill="#9b2b2b"/></g>
+          <g data-viseme="round"><ellipse cx="0" cy="6" rx="22" ry="26" fill="#9b2b2b"/></g>
+          <g data-viseme="f_v"><path d="M-28 6 q28 -24 56 0" fill="none" stroke="#000" stroke-width="3"/><rect x="-20" y="2" width="40" height="6" rx="3" fill="#9b2b2b"/></g>
+          <g data-viseme="th"><rect x="-18" y="0" width="36" height="8" rx="4" fill="#9b2b2b"/><rect x="-6" y="-8" width="12" height="8" rx="3" fill="#ffe8d6"/></g>
+          <g data-viseme="smush"><ellipse cx="0" cy="6" rx="28" ry="12" fill="#9b2b2b"/></g>
+          <g data-viseme="kiss"><ellipse cx="0" cy="6" rx="16" ry="12" fill="#9b2b2b"/></g>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="debug-info">
+    Viseme: <strong id="visemeName">rest</strong><br>
+    Character: <strong id="debugCharacter">boy</strong>
+  </div>
+</div>
+
+<script>
+  const container = document.getElementById("container");
+  const visemeName = document.getElementById("visemeName");
+  const debugCharacter = document.getElementById("debugCharacter");
+  const mouthSet = document.getElementById("mouthSet");
+  const characterImage = document.getElementById("characterImage");
+
+  let animationQueue = [], animationTimer = null, isAnimating = false;
+  let currentCharacter = 'boy';
+
+  // Character data store, to be populated by Android
+  const characters = {
+      boy: { image: '' },
+      girl: { image: '' }
+  };
+
+  // --- Core Animation Logic ---
+
+  function simpleG2P(text) {
+      let s = text.toLowerCase().replace(/[^a-z\s]/g, ' ');
+      const tokens = [];
+      for (let i = 0; i < s.length;) {
+          if (s[i] === " ") { i++; continue }
+          const dig = s.slice(i, i + 2);
+          if (['ch', 'sh', 'th', 'ng', 'ph', 'qu', 'ck', 'wh'].includes(dig)) { tokens.push(dig); i += 2; continue }
+          tokens.push(s[i]); i++;
+      }
+      return tokens;
+  }
+
+  function phonemeToViseme(p) {
+      if (['p', 'b', 'm'].includes(p)) return 'closed';
+      if (['a', 'o'].includes(p)) return 'open';
+      if (['e', 'i', 'y'].includes(p)) return 'wide';
+      if (['u', 'oo', 'w'].includes(p)) return 'round';
+      if (['f', 'v'].includes(p)) return 'f_v';
+      if (['th', 't', 'd', 'n'].includes(p)) return 'th';
+      if (['s', 'z', 'sh', 'ch', 'j'].includes(p)) return 'smush';
+      if (['q'].includes(p)) return 'kiss';
+      return 'rest';
+  }
+
+  function estimateDuration(token) {
+      return /[aeiou]/.test(token) ? 140 : 90;
+  }
+
+  function prepareAnimationQueue(text) {
+      const tokens = simpleG2P(text);
+      const frames = tokens.map(t => ({ viseme: phonemeToViseme(t), duration: estimateDuration(t) }));
+      const compressedQueue = [];
+      for (const frame of frames) {
+          const lastFrame = compressedQueue[compressedQueue.length - 1];
+          if (lastFrame && lastFrame.viseme === frame.viseme) {
+              lastFrame.duration += frame.duration;
+          } else {
+              compressedQueue.push({ ...frame });
+          }
+      }
+      return compressedQueue;
+  }
+
+  function setViseme(v) {
+      mouthSet.querySelectorAll("[data-viseme]").forEach(g => g.classList.remove("active"));
+      const el = mouthSet.querySelector(`[data-viseme="${v}"]`);
+      if (el) el.classList.add("active");
+      visemeName.innerText = v;
+  }
+
+  function stepAnimationQueue() {
+      if (!isAnimating) return;
+      if (animationQueue.length === 0) {
+          setViseme("rest");
+          isAnimating = false;
+          return;
+      }
+      const frame = animationQueue.shift();
+      setViseme(frame.viseme);
+      animationTimer = setTimeout(stepAnimationQueue, frame.duration);
+  }
+
+  function stopAnimation() {
+      isAnimating = false;
+      animationQueue = [];
+      if (animationTimer) {
+          clearTimeout(animationTimer);
+          animationTimer = null;
+      }
+      setViseme("rest");
+  }
+
+  // --- API for Android Control ---
+
+  window.AndroidLipSyncAPI = {
+      startLipSync: function(text) {
+          if (!text || !text.trim()) return;
+          stopAnimation();
+          animationQueue = prepareAnimationQueue(text);
+          if (animationQueue.length > 0) {
+              isAnimating = true;
+              stepAnimationQueue();
+          }
+      },
+
+      stopLipSync: function() {
+          stopAnimation();
+      },
+
+      switchCharacter: function(character) {
+          if (characters[character]) {
+              currentCharacter = character;
+              characterImage.src = characters[character].image;
+              debugCharacter.innerText = character;
+          }
+      },
+
+      toggleDebug: function(showDebug) {
+          if (showDebug) {
+              container.classList.add("debug-mode");
+          } else {
+              container.classList.remove("debug-mode");
+          }
+      },
+
+      testAnimation: function() {
+          const allVisemes = ["rest", "open", "wide", "round", "f_v", "th", "smush", "kiss", "closed"];
+          stopAnimation();
+          animationQueue = allVisemes.map(v => ({ viseme: v, duration: 250 }));
+          isAnimating = true;
+          stepAnimationQueue();
+      }
+  };
+
+  // This object and method is added for image injection from Kotlin
+  window.lipSync = {
+      setImageData: function(data) {
+          if (data.boy) characters.boy.image = data.boy;
+          if (data.girl) characters.girl.image = data.girl;
+          // Set initial character image
+          window.AndroidLipSyncAPI.switchCharacter(currentCharacter);
+      }
+  };
+
+  // --- Initialization ---
+  setViseme("rest");
+
+</script>
+</body>
+</html>

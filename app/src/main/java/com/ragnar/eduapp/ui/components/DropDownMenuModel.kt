@@ -26,6 +26,7 @@ import com.ragnar.eduapp.ui.theme.BackgroundPrimary
 import com.ragnar.eduapp.ui.theme.ColorHint
 import com.ragnar.eduapp.ui.theme.LightGray
 import com.ragnar.eduapp.ui.theme.TextPrimary
+import com.ragnar.eduapp.ui.theme.TextSecondary
 import com.ragnar.eduapp.ui.theme.textFieldBackgroundColor
 import kotlin.text.ifEmpty
 
@@ -52,16 +53,19 @@ fun DropDownMenuModel(
     ) {
         TextField(
             readOnly = true,
-            value = selectedValue.ifEmpty { label },
+            value = selectedValue,
             onValueChange = {},
-            modifier = Modifier.fillMaxSize().menuAnchor(),
+            modifier = Modifier.menuAnchor(),
+            label = { Text(label) },
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = textFieldBackgroundColor,
                 unfocusedContainerColor = textFieldBackgroundColor,
                 focusedTextColor = TextPrimary,
                 unfocusedTextColor = TextPrimary,
                 focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedLabelColor = TextSecondary,
+                unfocusedLabelColor = ColorHint
             ),
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
         )
@@ -69,7 +73,7 @@ fun DropDownMenuModel(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(textFieldBackgroundColor).padding(5.dp)
+            modifier = Modifier.background(textFieldBackgroundColor)
         ) {
             options.forEachIndexed { index, option ->
                 DropdownMenuItem(

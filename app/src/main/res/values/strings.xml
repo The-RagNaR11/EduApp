@@ -40,5 +40,36 @@
     <string name="select_subject">Select Subject</string>
 
     <string name="select_chapter_to_study">Select Chapters to Study</string>
+    
+<!--    Student Level Assessment Screen-->
+    <string name="select_class_label">Select Your Class</string>
+    
+<!--    Learning Latent Screen-->
+    <string name="learning_intent_title">Learning Intent</string>
+    <string name="learning_intent_subtitle">Help us understand your learning goal to personalize your AI tutoring experience</string>
+
+    <string name="what_type_of_learner">What type of learner are you today?</string>
+    <string name="concept_learner">Concept Learner</string>
+    <string name="concept_learner_sub">I want to understand concepts deeply and build strong foundations</string>
+    <string name="exam_oriented">Exam Oriented</string>
+    <string name="exam_oriented_sub">I want to prepare for exams and focus on practice problems</string>
+
+    <string name="select_concept_approach">Select your concept learning approach:</string>
+    <string name="first_time_learner">First Time Learner</string>
+    <string name="first_time_learner_sub">I\'m learning these concepts for the first time and need detailed explanations</string>
+    <string name="revision">Revision</string>
+    <string name="revision_sub">I\'ve studied these topics before and want to review and strengthen my understanding</string>
+
+    <string name="time_for_learning">How much time do you have for learning?</string>
+    <string name="less_time">Less Time Available</string>
+    <string name="less_time_sub">Quick revision with focus on important topics and shortcuts</string>
+    <string name="medium_time">Medium Time Available</string>
+    <string name="medium_time_sub">Balanced approach with practice problems and concept review</string>
+    <string name="high_time">High Time Available</string>
+    <string name="high_time_sub">Comprehensive preparation with detailed practice and multiple question types</string>
+
+    <string name="summary_title">Ready to Begin?</string>
+    <string name="summary_message">We’ll tailor your AI tutoring experience based on your chosen preferences.</string>
+    <string name="start_tutoring">Start Personalized AI Tutoring</string>
 
 </resources>

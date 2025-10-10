@@ -17,6 +17,13 @@ object SharedPreferenceUtils {
     const val KEY_PHONE_NUMBER = "phone_number"
     const val KEY_SCHOOL_NAME = "school_name"
     const val KEY_AMBITION = "ambition"
+    const val KEY_LEARNING_INTENT = "learning_intent"
+    const val KEY_CLASS = "student_class"
+    const val KEY_PACE = "student_pace"
+    const val KEY_CHAPTER_LIST = "chapter_list"
+    const val KEY_SUBJECT = "selected_subject"
+    const val KEY_SYLLABUS = "selected_syllabus"
+
 
     // Initialize the sharedPreference Instance
     private fun getPrefs(context: Context): SharedPreferences {

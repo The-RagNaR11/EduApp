@@ -299,7 +299,7 @@ fun UserDetailEntryScreen(navController: NavController) {
                             SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_SCHOOL_NAME, schoolName)
                             SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_AMBITION, ambitionText)
 
-                            navController.navigate("studySessionSetup") {
+                            navController.navigate("studentLevelAssessment") {
                                 popUpTo(0) { inclusive = true } // remove back stack of the screen
                                 // on back press it will close the screen
                             }

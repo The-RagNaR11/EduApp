@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
     id("com.google.gms.google-services")
     id("kotlin-parcelize")
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
 }
 android {
     namespace = "com.ragnar.eduapp"
@@ -60,4 +61,5 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }

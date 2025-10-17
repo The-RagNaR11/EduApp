@@ -37,14 +37,15 @@ fun MainScreen() {
     val context = LocalContext.current
 
     val startDestination = when {
-        SharedPreferenceUtils.isUserLoggedIn(context) and SharedPreferenceUtils.isUserDetailAvailable(context) -> {
-            if (SharedPreferenceUtils.KEY_PACE.isEmpty() or SharedPreferenceUtils.KEY_CLASS.isEmpty()) {
+        SharedPreferenceUtils.isUserLoggedIn(context) && SharedPreferenceUtils.isUserDetailAvailable(context) -> {
+            if (SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_PACE)!!.isEmpty()
+                || SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_CLASS)!!.isEmpty()) {
                 "studentLevelAssessment"
             }
             else {
-                if (SharedPreferenceUtils.KEY_SUBJECT.isEmpty()
-                    or SharedPreferenceUtils.KEY_CHAPTER_LIST.isEmpty()
-                    or SharedPreferenceUtils.KEY_SYLLABUS.isEmpty() ) {
+                if (SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_SUBJECT)!!.isEmpty()
+                    || SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_CHAPTER_LIST)!!.isEmpty()
+                    || SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_SYLLABUS)!!.isEmpty() ) {
                     "studySessionSetUp"
                 } else {
                     if (SharedPreferenceUtils.KEY_LEARNING_INTENT.isEmpty()) {
@@ -57,7 +58,7 @@ fun MainScreen() {
             }
         }
 
-        SharedPreferenceUtils.isUserLoggedIn(context) and !SharedPreferenceUtils.isUserDetailAvailable(context) -> {
+        SharedPreferenceUtils.isUserLoggedIn(context) && !SharedPreferenceUtils.isUserDetailAvailable(context) -> {
             "userDetailEntry"
         }
 
@@ -73,7 +74,6 @@ fun MainScreen() {
         composable("studentLevelAssessment") { StudentLevelAssessmentScreen(navController) }
         composable("studySessionSetUp") { StudySessionSetupScreen(navController) }
         composable("learningIntent") { LearningLatentScreen(navController) }
-        composable("chatBot") { ChatBotScreen(navController) }
+        composable("chatBot") { ChatBotScreen() }
     }
 }
-

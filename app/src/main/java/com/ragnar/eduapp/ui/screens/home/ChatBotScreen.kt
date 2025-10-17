@@ -3,9 +3,9 @@ package com.ragnar.eduapp.ui.screens.home
 import android.Manifest
 import android.util.Log
 import android.webkit.WebView
+import android.widget.Space
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -49,7 +50,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,21 +58,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.core.chatBot.ChatViewModel
 import com.ragnar.eduapp.core.chatBot.ChatViewModelFactory
 import com.ragnar.eduapp.data.model.ChatMessageBubbleModel
-import com.ragnar.eduapp.ui.theme.*
+import com.ragnar.eduapp.ui.components.ConceptMapModel
+import com.ragnar.eduapp.ui.components.ExpandableTextOutput
+import com.ragnar.eduapp.ui.theme.AccentBlue
+import com.ragnar.eduapp.ui.theme.BackgroundPrimary
+import com.ragnar.eduapp.ui.theme.BackgroundSecondary
+import com.ragnar.eduapp.ui.theme.BrandPrimary
+import com.ragnar.eduapp.ui.theme.ColorHint
+import com.ragnar.eduapp.ui.theme.ColorSuccess
+import com.ragnar.eduapp.ui.theme.SendButtonColor
+import com.ragnar.eduapp.ui.theme.TextPrimary
+import com.ragnar.eduapp.ui.theme.TextSecondary
+import com.ragnar.eduapp.ui.theme.White
 import com.ragnar.eduapp.viewModels.speechModels.SpeechToText
 import com.ragnar.eduapp.viewModels.speechModels.TextToSpeech
 
 @Composable
 fun ChatBotScreen(
-    navController: NavController,
+    //    navController: NavController,
     ttsController: TextToSpeech = viewModel(), // TextToSpeech core Util
     sttController: SpeechToText = viewModel(), // SpeechToText core Util
     chatBotController : ChatViewModel = viewModel (factory = ChatViewModelFactory(stringResource(R.string.chat_bot_api_key))) //API key
@@ -91,17 +102,14 @@ fun ChatBotScreen(
     val chatListState = rememberLazyListState()
 
     var messageInput by remember { mutableStateOf("") }
-//    messageInput = sttState.resultText
-
-    var audioSliderPosition by remember { mutableFloatStateOf(0.3f) } // slider to record the position of audio playback
-    var audioVolume by remember { mutableFloatStateOf(0.5f) } // slider to record the position of volume
+    //    messageInput = sttState.resultText
 
     // gets the latest AI message from chat history
     val aiMessageOutput = chatMessages.lastOrNull { it.sender == "ai" }?.content
         ?: "Hi! I'm ready to help you learn. What would you like to work on today?"
 
     // state for customAlertBox
-    val showDialog by chatBotController.showPopup.collectAsState()
+    //    val showDialog by chatBotController.showPopup.collectAsState()
 
 
 
@@ -113,8 +121,6 @@ fun ChatBotScreen(
 //            onDismiss = { chatBotController.dismissPopUp() }
 //        )
 //    }
-
-
 
     // updates messageInput from STT when speech recognition completes
     LaunchedEffect(sttState.resultText) {
@@ -188,106 +194,206 @@ fun ChatBotScreen(
             )
 
             /*
-            Card to display Lip sync model
-             */
-            Card (
-                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp) ,
-                modifier = Modifier
-                    .width(150.dp)
-                    .height(220.dp)
-            ) {
-                AndroidView(
-                    factory = {
-                        WebView(context).apply {
-                            ttsController.setupWebView(this)
-                        }
-                    }
-                )
-            }
-
-            /*
             Card to display current result from AI
              */
             Card(
-                border = BorderStroke(1.dp, ColorHint),
                 elevation = CardDefaults.cardElevation(defaultElevation = 12.dp) ,
                 modifier = Modifier
                     .align(Alignment.Start)
+                    .wrapContentHeight()
                     .padding(0.dp, 15.dp)
 
-            ) {
+            ){
+//                Spacer(modifier = Modifier.padding(15.dp))
+                /**
+                 * Column for send message part
+                 * TextField
+                 * Send Icon
+                 * Mic Icon
+                 */
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .background(BackgroundPrimary)
-                        .padding(0.dp, 10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(BackgroundPrimary)
+                            .padding(10.dp)
                     ) {
-                        Row {
-                            Icon(
-                                Icons.Outlined.SmartToy,
-                                contentDescription = "AI Icon",
-                                tint = BrandPrimary
-                            )
-                            Spacer(modifier = Modifier.padding(4.dp)) // distance between logo and text
-
-                            Text(
-                                text = "Sarah is saying: ",
-                                color = BrandPrimary
-                            )
+                        // Avatar / Lip sync WebView
+                        Card(
+                            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                            modifier = Modifier
+                                .width(120.dp)
+                                .height(160.dp)
+                                .padding(end = 8.dp)
+                        ) {
+                            AndroidView(factory = {
+                                WebView(context).apply {
+                                    ttsController.setupWebView(this)
+                                }
+                            })
                         }
-                        Spacer(modifier = Modifier.weight(1f))
-                        // Play Pause Button
+
+                        // AI speech and message column
+                        Column(
+                            modifier = Modifier
+                                .weight(1f) // take remaining space
+                                .wrapContentHeight()
+                        ) {
+                            // Header row ("Sarah is saying" + button)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    Icons.Outlined.SmartToy,
+                                    contentDescription = "AI Icon",
+                                    tint = AccentBlue
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text("Sarah is saying:", color = AccentBlue)
+                                Spacer(Modifier.weight(1f))
+                                IconButton(
+                                    onClick = {
+                                        if (ttsState.isInitialized) {
+                                            if (!ttsState.isSpeaking) {
+                                                ttsController.speak(aiMessageOutput)
+                                            } else {
+                                                ttsController.stop()
+                                            }
+                                        } else {
+                                            ttsController.initialize(context)
+                                        }
+                                    },
+                                    modifier = Modifier.size(32.dp),
+                                    colors = IconButtonDefaults.iconButtonColors(
+                                        containerColor = BrandPrimary,
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Icon(
+                                        if (ttsState.isSpeaking) Icons.Default.Stop else Icons.Default.PlayArrow,
+                                        contentDescription = "Play Audio",
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                            }
+
+                            // Message text
+                            ExpandableTextOutput(text = aiMessageOutput)
+                        }
+                    }
+                    /**
+                     * A text field send icon and mic button in a row
+                     */
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // standard TextField
+                        TextField(
+                            value = messageInput,
+                            onValueChange = { messageInput = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Ask Sarah a question...") },
+                            shape = RoundedCornerShape(20.dp),
+                            singleLine = false,
+                            colors = TextFieldDefaults.colors(
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedContainerColor = BackgroundSecondary,
+                                focusedContainerColor = BackgroundSecondary,
+                                cursorColor = ColorHint,
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                unfocusedPlaceholderColor = TextSecondary,
+                                focusedPlaceholderColor = TextSecondary
+                            )
+                        )
+                        // Button to send message to chat
                         IconButton(
                             onClick = {
-                                if (ttsState.isInitialized) {
-                                    if (!ttsState.isSpeaking) {
-                                        ttsController.speak(aiMessageOutput)
-                                    }else {
-                                        ttsController.stop()
-                                    }
-                                } else {
-                                    ttsController.initialize(context)
+                                if (messageInput.isNotBlank() && !isChatLoading) {
+                                    // Send message to chatbot
+                                    chatBotController.sendMessage(messageInput)
+                                    // Clear input
+                                    messageInput = ""
                                 }
                             },
-                            modifier = Modifier.size(25.dp),
+                            enabled = messageInput.isNotBlank() && !isChatLoading,
+                            modifier = Modifier.size(48.dp),
                             colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = BrandPrimary,
-                                contentColor = Color.White
+                                containerColor = SendButtonColor,
+                                contentColor = Color.White,
+                                disabledContainerColor = ColorHint,
+                                disabledContentColor = Color.White
                             )
                         ) {
                             Icon(
-                                if (ttsState.isSpeaking) Icons.Default.Stop else Icons.Default.PlayArrow,
-                                contentDescription = "Play Audio",
-                                modifier = Modifier.size(40.dp)
+                                Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send Message"
                             )
                         }
-                        Spacer(modifier = Modifier.padding(4.dp))
+
+                        // mic button
+                        IconButton(
+                            onClick = {
+                                Log.i("ChatScreen", "Mic Button Clicked")
+                                if (!sttState.isSpeaking) {
+                                    if (sttState.isInitialized && sttState.hasPermission) {
+                                        sttController.startListening()
+                                    } else if (!sttState.hasPermission){
+                                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                } else {
+                                    sttController.stopListening()
+                                }
+                            },
+                            modifier = Modifier
+                                .size(48.dp)
+                                .border(1.dp, SendButtonColor, CircleShape)
+                        ) {
+                            Icon(
+                                if (sttState.isSpeaking) Icons.Outlined.Stop else Icons.Outlined.Mic,
+                                contentDescription = "Record Audio",
+                                tint = SendButtonColor
+                            )
+                        }
                     }
-                    // Output message from the chat bot
+
+                    // "Tap to send" text below the Row
                     Text(
-                        text = aiMessageOutput,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = TextPrimary,
-                        modifier = Modifier.padding(
-                            top = 0.dp,
-                            bottom = 10.dp,
-                            start = 10.dp,
-                            end = 10.dp
-                        )
+                        text = if (isChatLoading) "Sending..." else "Tap to send",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = ColorHint,
+                        modifier = Modifier.padding(start = 20.dp, bottom = 8.dp)
                     )
                 }
-
             }
 
+            /**
+             * Card to display concept map
+             * this is a dynamic compose model
+             */
+            Card(
+                modifier = Modifier
+                    .height(500.dp)
+//                    .padding(10.dp)
+                    .background(BackgroundSecondary),
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+            ) {
+                ConceptMapModel()
+            }
+            Spacer(modifier = Modifier.padding(10.dp))
             /*
             Card to display previous messages
              */
             Card(
-                border = BorderStroke(1.dp, ColorHint),
                 elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
                 modifier = Modifier.align(Alignment.Start)
             ) {
@@ -347,110 +453,6 @@ fun ChatBotScreen(
                             }
                         }
                     }
-                }
-            }
-
-            /*
-                Send Message Card
-             */
-            Card (
-                border = BorderStroke(1.dp, ColorHint),
-                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .padding(0.dp, 15.dp)
-            ){
-                Column(
-                    modifier = Modifier
-                        .background(BackgroundPrimary)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // standard TextField
-                        TextField(
-                            value = messageInput,
-                            onValueChange = { messageInput = it },
-                            modifier = Modifier.weight(1f),
-                            placeholder = { Text("Ask Sarah a question...") },
-                            shape = RoundedCornerShape(20.dp),
-                            singleLine = false,
-                            colors = TextFieldDefaults.colors(
-                                unfocusedIndicatorColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedContainerColor = BackgroundSecondary,
-                                focusedContainerColor = BackgroundSecondary,
-                                cursorColor = ColorHint,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary,
-                                unfocusedPlaceholderColor = TextSecondary,
-                                focusedPlaceholderColor = TextSecondary
-                            )
-                        )
-
-                        // Button to send message to chat
-                        IconButton(
-                            onClick = {
-                                if (messageInput.isNotBlank() && !isChatLoading) {
-                                    // Send message to chatbot
-                                    chatBotController.sendMessage(messageInput)
-                                    // Clear input
-                                    messageInput = ""
-//                                    sttState.resultText = ""
-                                }
-                            },
-                            enabled = messageInput.isNotBlank() && !isChatLoading,
-                            modifier = Modifier.size(48.dp),
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = SendButtonColor,
-                                contentColor = Color.White,
-                                disabledContainerColor = ColorHint,
-                                disabledContentColor = Color.White
-                            )
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.Send,
-                                contentDescription = "Send Message"
-                            )
-                        }
-
-                        // mic button
-                        IconButton(
-                            onClick = {
-                                Log.i("ChatScreen", "Mic Button Clicked")
-                                if (!sttState.isSpeaking) {
-                                    if (sttState.isInitialized && sttState.hasPermission) {
-                                        sttController.startListening()
-                                    } else if (!sttState.hasPermission){
-                                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                    }
-                                } else {
-                                    sttController.stopListening()
-                                }
-                            },
-                            modifier = Modifier
-                                .size(48.dp)
-                                .border(1.dp, SendButtonColor, CircleShape)
-                        ) {
-                            Icon(
-                                if (sttState.isSpeaking) Icons.Outlined.Stop else Icons.Outlined.Mic,
-                                contentDescription = "Record Audio",
-                                tint = SendButtonColor
-                            )
-                        }
-                    }
-
-                    // "Tap to send" text below the Row
-                    Text(
-                        text = if (isChatLoading) "Sending..." else "Tap to send",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = ColorHint,
-                        modifier = Modifier.padding(start = 20.dp, bottom = 8.dp)
-                    )
                 }
             }
         }

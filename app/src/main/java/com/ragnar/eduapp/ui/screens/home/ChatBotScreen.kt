@@ -97,6 +97,11 @@ fun ChatBotScreen(
     // Collects chat state from ChatViewModel
     val chatMessages by chatBotController.messages.collectAsState()
     val isChatLoading by chatBotController.isLoading.collectAsState()
+    // ConceptMap json output from AI
+    val conceptMapResult = chatBotController.conceptMapJSON.collectAsState()
+
+    val conceptMapJSON = conceptMapResult.value
+
 
     // Auto-scroll state for chat messages
     val chatListState = rememberLazyListState()
@@ -107,6 +112,9 @@ fun ChatBotScreen(
     // gets the latest AI message from chat history
     val aiMessageOutput = chatMessages.lastOrNull { it.sender == "ai" }?.content
         ?: "Hi! I'm ready to help you learn. What would you like to work on today?"
+
+
+
 
     // state for customAlertBox
     //    val showDialog by chatBotController.showPopup.collectAsState()
@@ -387,7 +395,9 @@ fun ChatBotScreen(
                     .background(BackgroundSecondary),
                 elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
             ) {
-                ConceptMapModel()
+
+
+                ConceptMapModel(conceptMapJSON)
             }
             Spacer(modifier = Modifier.padding(10.dp))
             /*

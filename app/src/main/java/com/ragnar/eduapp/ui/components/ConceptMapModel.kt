@@ -43,6 +43,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ragnar.eduapp.core.chatBot.ChatViewModel
 import com.ragnar.eduapp.data.dataClass.GraphData
 import com.ragnar.eduapp.ui.theme.AccentBlue
 import com.ragnar.eduapp.ui.theme.BackgroundPrimary
@@ -66,7 +67,7 @@ val jsonString = """
   "main_concept": "True Joy in Life (George Bernard Shaw)",
   "nodes": [
     {"id": "A", "label": "Purpose", "category": "Core"},
-    {"id": "B", "label": "Self-Recognition", "category": "Action"},
+    {"id": "B", "label": "Self Recognition", "category": "Action"},
     {"id": "C", "label": "Force of Nature", "category": "Outcome"},
     {"id": "D", "label": "Selfish Clod", "category": "Core"},
     {"id": "E", "label": "Complaining", "category": "Action"}
@@ -81,12 +82,28 @@ val jsonString = """
 """
 
 
-@Preview
 @Composable
-fun ConceptMapModel() {
+fun ConceptMapModel(
+    json: String
+) {
 
     // Decode JSON string into GraphData object - happens only once due to remember
-    val graphData = remember { Json.decodeFromString<GraphData>(jsonString) }
+    val graphData = remember(json) {
+        try {
+            Json.decodeFromString<GraphData>(json)
+        } catch (e: Exception) {
+            Log.e("ConceptMapModel", "Error parsing JSON", e)
+            GraphData(
+                visualization_type = "Concept Map",
+                main_concept = "Error loading data",
+                nodes = listOf(
+//                    GraphData.nodes(id = "A", label = "Error", category = "Core")
+
+                ),
+                edges = emptyList()
+            )
+        }
+    }
 
     // Create Paint object for rendering text on Canvas using native Android graphics
     val textPaint = remember {
@@ -100,10 +117,23 @@ fun ConceptMapModel() {
 
     // Function to assign colors based on node category for visual differentiation
     fun colorForCategory(category: String) = when (category) {
-        "Core" -> Color(0xFF3B82F6)      // Blue for core concepts
-        "Action" -> Color(0xFF10B981)    // Green for action items
-        "Outcome" -> Color(0xFFF59E0B)   // Amber for outcomes
-        else -> TextPrimary               // Default color for unknown categories
+        "Core" -> Color(0xFF3B82F6)
+        "Action" -> Color(0xFF10B981)
+        "Outcome" -> Color(0xFFF59E0B)
+        "Application" -> Color(0xFFEC4899)
+        "Biological Feature" -> Color(0xFF8B5CF6)
+        "Social Structure" -> Color(0xFF14B8A6)
+        "History" -> Color(0xFF6366F1)
+        "Biology" -> Color(0xFF10B981)
+        "Digestive System" -> Color(0xFFF59E0B)
+        "Nutrition" -> Color(0xFF84CC16)
+        "Behavior" -> Color(0xFF06B6D4)
+        "Health" -> Color(0xFFF43F5E)
+        "Ecology" -> Color(0xFF22C55E)
+        "Genetics" -> Color(0xFFA855F7)
+        "Taxonomy" -> Color(0xFF3B82F6)
+        "Agriculture" -> Color(0xFFF97316)
+        else -> Color(0xFF64748B)  // Default gray
     }
 
     // Define node sizes in pixels
@@ -112,7 +142,7 @@ fun ConceptMapModel() {
 
     // Store node positions as a map of node ID to Offset (x, y coordinates)
     // Using mutableStateMapOf to trigger recomposition when positions change
-    val nodePositions = remember { mutableStateMapOf<String, Offset>() }
+    val nodePositions = remember(json) { mutableStateMapOf<String, Offset>() }
 
     // Track which node is currently selected (being dragged)
     var selectedNodeId by remember { mutableStateOf<String?>(null) }
@@ -304,8 +334,8 @@ fun ConceptMapModel() {
 
                         "Action" -> {
                             // rectangle for action category
-                            val width = radius * 1.8f // Make rectangle wider than tall
-                            val height = radius * 1.1f
+                            val width = radius * 2.1f // Make rectangle wider than tall
+                            val height = radius * 1.5f
                             drawRoundRect(
                                 color = color,
                                 topLeft = Offset(pos.x - width / 2, pos.y - height / 2), // Center the rect

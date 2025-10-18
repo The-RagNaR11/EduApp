@@ -698,8 +698,8 @@ copies or substantial portions of the Software.
 
 ## 👨‍💻 Author
 
-**The-RagNaR11**
-- GitHub: [@The-RagNaR11](https://github.com/The-RagNaR11)
+**Shubhash Singh**
+- GitHub: [@shubhash-singh](https://github.com/shubhash-singh)
 - Project Link: [https://github.com/The-RagNaR11/EduApp](https://github.com/The-RagNaR11/EduApp)
 
 ---

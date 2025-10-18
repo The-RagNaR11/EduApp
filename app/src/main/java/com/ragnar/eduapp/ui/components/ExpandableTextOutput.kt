@@ -50,7 +50,7 @@ fun ExpandableTextOutput(
                     showReadMoreButton = layoutResult.hasVisualOverflow
                 }
             },
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             // Apply the conditional modifier here
             modifier = Modifier
                 .padding(4.dp)

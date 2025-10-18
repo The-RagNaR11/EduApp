@@ -1,6 +1,7 @@
 package com.ragnar.eduapp.core.chatBot
 
 import android.util.Log
+import com.ragnar.eduapp.utils.SharedPreferenceUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -11,7 +12,13 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-class GroqLLMClient(private val apiKey: String) {
+class GroqLLMClient(
+    private val apiKey: String,
+    private val userClass: String,
+    private val nodeNumber: String,
+    private val maxWord: String
+
+) {
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -20,7 +27,6 @@ class GroqLLMClient(private val apiKey: String) {
         .build()
 
     private val url = "https://api.groq.com/openai/v1/chat/completions"
-
     /**
      * Main query method that returns the complete API response
      */
@@ -31,32 +37,47 @@ class GroqLLMClient(private val apiKey: String) {
                 put(JSONObject().apply {
                     put("role", "system")
                     put("content", """
-                        You are a helpful AI tutor. 
-                        Every response MUST have this exact format:
-
+                        You are an intelligent and structured AI tutor for a Class $userClass student.
+                        You must respond strictly in the following format and hierarchy — no markdown, no extra text, and no explanations outside this structure.
+                    
                         [ANSWER]
-                        Write a normal, natural explanation for the user.
-
+                        Provide a clear, natural, and age-appropriate explanation for the student's query in less than $maxWord words.
+                        Keep the tone educational and concise.
+                    
                         [CONCEPT_MAP_JSON]
-                        Write a valid JSON object describing a concept map in this format:
+                        Provide ONLY a valid JSON object describing a hierarchical concept map for the same topic.
+                        Use this exact structure:
                         {
                           "visualization_type": "Concept Map",
                           "main_concept": "Main idea or topic",
                           "nodes": [
-                            {"id": "A", "label": "Concept label", "category": "Core"},
+                            {"id": "A", "label": "Main Concept", "category": "Main"},
+                            {"id": "B", "label": "Sub Concept 1", "category": "Secondary"},
+                            {"id": "C", "label": "Sub Concept 2", "category": "Secondary"},
+                            {"id": "D", "label": "Leaf Concept 1", "category": "Leaf"},
                             ...
                           ],
                           "edges": [
-                            {"from": "A", "to": "B", "label": "relationship"},
+                            {"from": "A", "to": "B", "label": "relation"},
+                            {"from": "A", "to": "C", "label": "relation"},
+                            {"from": "B", "to": "D", "label": "relation"},
                             ...
                           ]
                         }
+                    
+                        Hierarchy Rules:
+                        - There must be exactly **1 Main node** (root concept).
+                        - Include **2–3 Secondary nodes** connected directly to the main node.
+                        - Remaining nodes should be **Leaf nodes**, connected to secondary nodes.
+                        - Include approximately $nodeNumber total nodes.
+                        - All nodes and edges must form a clear hierarchical structure.
+                        - JSON must be valid, syntactically correct, and directly parsable (no markdown or code block).
+                    
+                        Do not add any explanations, comments, or text after the JSON.
+                        """.trimIndent()
+                    )
 
-                        Rules:
-                        - The JSON must contain 6–15 nodes.
-                        - No markdown, code blocks, or explanations after the JSON.
-                        - Ensure JSON is valid and parseable.
-                    """.trimIndent())
+
                 })
                 put(JSONObject().apply {
                     put("role", "user")
@@ -199,34 +220,54 @@ class GroqLLMClient(private val apiKey: String) {
                 if (answerStart != -1) {
                     val afterAnswer = content.substring(answerStart + "[ANSWER]".length).trim()
 
-                    // Find where the JSON starts
+                    // Find where the JSON starts (to exclude it)
                     val jsonStart = afterAnswer.indexOf("{")
 
-                    if (jsonStart != -1) {
-                        // Check if there's a marker before the JSON
-                        val beforeJson = afterAnswer.substring(0, jsonStart).trim()
+                    // Also find [CONCEPT_MAP_JSON] marker as alternative boundary
+                    val conceptMapMarker = afterAnswer.indexOf("[CONCEPT_MAP_JSON]")
 
-                        // Remove any trailing bracket markers like [Cow Biology Concept Map]
-                        val lastBracket = beforeJson.lastIndexOf("[")
-                        if (lastBracket != -1) {
-                            return beforeJson.substring(0, lastBracket).trim()
-                        }
-
-                        return beforeJson
+                    // Determine where to cut the answer
+                    val cutPosition = when {
+                        conceptMapMarker != -1 -> conceptMapMarker
+                        jsonStart != -1 -> jsonStart
+                        else -> afterAnswer.length
                     }
 
-                    // No JSON found, return everything after [ANSWER]
-                    return afterAnswer
+                    val rawAnswer = if (cutPosition != afterAnswer.length) {
+                        afterAnswer.substring(0, cutPosition).trim()
+                    } else {
+                        afterAnswer
+                    }
+
+                    // Clean up the answer by removing any remaining bracket markers
+                    var cleanedAnswer = rawAnswer
+
+                    // Remove patterns like [COW], [Concept Map], [ANYTHING] at the end or in middle
+                    cleanedAnswer = cleanedAnswer.replace(Regex("\\[.*?\\]"), "").trim()
+
+                    // Remove any trailing markers or labels before returning
+                    return cleanedAnswer.trim()
                 }
 
-                // No [ANSWER] marker, try to extract text before JSON
-                val firstBrace = content.indexOf("{")
+                // No [ANSWER] marker, try to extract text before JSON or markers
+                var rawContent = content
+
+                // Find first JSON occurrence
+                val firstBrace = rawContent.indexOf("{")
                 if (firstBrace > 0) {
-                    return content.substring(0, firstBrace).trim()
+                    rawContent = rawContent.substring(0, firstBrace).trim()
                 }
 
-                // If no JSON found, return the full content
-                return content.trim()
+                // Find [CONCEPT_MAP_JSON] marker
+                val conceptMapMarker = rawContent.indexOf("[CONCEPT_MAP_JSON]")
+                if (conceptMapMarker != -1) {
+                    rawContent = rawContent.substring(0, conceptMapMarker).trim()
+                }
+
+                // Clean up any bracket markers
+                rawContent = rawContent.replace(Regex("\\[.*?\\]"), "").trim()
+
+                return if (rawContent.isNotBlank()) rawContent else content.trim()
             }
 
             return "I encountered an error processing the response."

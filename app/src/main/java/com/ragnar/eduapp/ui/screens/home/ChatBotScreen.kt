@@ -3,12 +3,12 @@ package com.ragnar.eduapp.ui.screens.home
 import android.Manifest
 import android.util.Log
 import android.webkit.WebView
-import android.widget.Space
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -58,14 +58,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.core.chatBot.ChatViewModel
 import com.ragnar.eduapp.core.chatBot.ChatViewModelFactory
-import com.ragnar.eduapp.data.model.ChatMessageBubbleModel
+import com.ragnar.eduapp.ui.components.ChatMessageBubbleModel
 import com.ragnar.eduapp.ui.components.ConceptMapModel
 import com.ragnar.eduapp.ui.components.ExpandableTextOutput
 import com.ragnar.eduapp.ui.theme.AccentBlue
@@ -78,6 +77,7 @@ import com.ragnar.eduapp.ui.theme.SendButtonColor
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary
 import com.ragnar.eduapp.ui.theme.White
+import com.ragnar.eduapp.utils.SharedPreferenceUtils
 import com.ragnar.eduapp.viewModels.speechModels.SpeechToText
 import com.ragnar.eduapp.viewModels.speechModels.TextToSpeech
 
@@ -86,10 +86,21 @@ fun ChatBotScreen(
     //    navController: NavController,
     ttsController: TextToSpeech = viewModel(), // TextToSpeech core Util
     sttController: SpeechToText = viewModel(), // SpeechToText core Util
-    chatBotController : ChatViewModel = viewModel (factory = ChatViewModelFactory(stringResource(R.string.chat_bot_api_key))) //API key
 ) {
 
     val context = LocalContext.current
+    val userClass: String = SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_CLASS).toString()
+    val nodeNumber = "6";
+    val maxWord = "100"
+
+    val chatBotController: ChatViewModel = viewModel(
+        factory = ChatViewModelFactory(
+            apiKey = stringResource(R.string.chat_bot_api_key),
+            userClass = userClass,
+            nodeNumber = nodeNumber,
+            maxWord = maxWord
+        )
+    )
 
     val ttsState by ttsController.state.collectAsState() // TTS states
     val sttState by sttController.state.collectAsState() // STT states
@@ -97,6 +108,14 @@ fun ChatBotScreen(
     // Collects chat state from ChatViewModel
     val chatMessages by chatBotController.messages.collectAsState()
     val isChatLoading by chatBotController.isLoading.collectAsState()
+
+    // Add after existing state collectors
+    val typingText by chatBotController.typingText.collectAsState()
+    val isTyping by chatBotController.isTyping.collectAsState()
+    val shouldStartTTS by chatBotController.shouldStartTTS.collectAsState()
+    val fullTextForTTS by chatBotController.fullTextForTTS.collectAsState()
+
+
     // ConceptMap json output from AI
     val conceptMapResult = chatBotController.conceptMapJSON.collectAsState()
 
@@ -110,9 +129,11 @@ fun ChatBotScreen(
     //    messageInput = sttState.resultText
 
     // gets the latest AI message from chat history
-    val aiMessageOutput = chatMessages.lastOrNull { it.sender == "ai" }?.content
-        ?: "Hi! I'm ready to help you learn. What would you like to work on today?"
-
+    val aiMessageOutput = when {
+        isTyping -> typingText
+        else -> chatMessages.lastOrNull { it.sender == "ai" }?.content
+            ?: "Hi! I'm ready to help you learn. What would you like to work on today?"
+    }
 
 
 
@@ -129,6 +150,15 @@ fun ChatBotScreen(
 //            onDismiss = { chatBotController.dismissPopUp() }
 //        )
 //    }
+
+    // Auto-start TTS when shouldStartTTS becomes true
+    LaunchedEffect(shouldStartTTS) {
+        if (shouldStartTTS && fullTextForTTS.isNotBlank()) {
+            if (ttsState.isInitialized) {
+                ttsController.speak(fullTextForTTS)
+            }
+        }
+    }
 
     // updates messageInput from STT when speech recognition completes
     LaunchedEffect(sttState.resultText) {
@@ -196,8 +226,16 @@ fun ChatBotScreen(
                 style = MaterialTheme.typography.labelLarge
             )
             Text(
-                text = if (isChatLoading) "• Thinking..." else "• Available to help",
-                color = if (isChatLoading) ColorHint else ColorSuccess,
+                text = when {
+                    isChatLoading -> "• Thinking..."
+                    isTyping -> "• Speaking..."
+                    else -> "• Available to help"
+                },
+                color = when {
+                    isChatLoading -> ColorHint
+                    isTyping -> AccentBlue
+                    else -> ColorSuccess
+                },
                 modifier = Modifier.padding(8.dp)
             )
 
@@ -290,7 +328,23 @@ fun ChatBotScreen(
                             }
 
                             // Message text
-                            ExpandableTextOutput(text = aiMessageOutput)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                            ) {
+                                ExpandableTextOutput(text = aiMessageOutput)
+
+                                // Show typing cursor when typing
+                                if (isTyping) {
+                                    Text(
+                                        text = "▋",
+                                        color = AccentBlue,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                     /**
@@ -452,9 +506,6 @@ fun ChatBotScreen(
                             items(chatMessages) { message ->
                                 ChatMessageBubbleModel(
                                     message = message,
-                                    onRetry = if (message.canRetry) {
-                                        { chatBotController.retryLastMessage() }
-                                    } else null,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }

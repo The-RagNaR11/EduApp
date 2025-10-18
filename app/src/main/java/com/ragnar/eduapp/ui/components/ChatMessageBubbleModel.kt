@@ -1,4 +1,4 @@
-package com.ragnar.eduapp.data.model
+package com.ragnar.eduapp.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.ragnar.eduapp.data.model.ChatMessageModel
 import com.ragnar.eduapp.ui.theme.BrandPrimary
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary
@@ -26,7 +27,6 @@ import com.ragnar.eduapp.ui.theme.White
 @Composable
 fun ChatMessageBubbleModel(
     message: ChatMessageModel,
-    onRetry: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val isFromAI = message.sender == "ai"

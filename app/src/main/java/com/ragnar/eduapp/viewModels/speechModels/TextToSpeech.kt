@@ -59,6 +59,10 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
         "te-IN" to "తెలుగు (Telugu)"
     )
 
+//    for position tracking
+    private var speechStartTime: Long = 0
+    private var totalEstimatedDuration: Long = 0
+
     /**
      * Initialize the TTS controller
      */
@@ -113,6 +117,7 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
                 // Setup utterance progress listener
                 tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {
+                        speechStartTime = System.currentTimeMillis()
                         _state.value = _state.value.copy(
                             isSpeaking = true,
                             statusMessage = "Speaking..."
@@ -120,6 +125,9 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
                     }
 
                     override fun onDone(utteranceId: String?) {
+                        // RESET
+                        speechStartTime = 0
+                        totalEstimatedDuration = 0
                         _state.value = _state.value.copy(
                             isSpeaking = false,
                             statusMessage = "Speech completed"
@@ -128,6 +136,9 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
                     }
 
                     override fun onError(utteranceId: String?) {
+                        // RESET
+                        speechStartTime = 0
+                        totalEstimatedDuration = 0
                         _state.value = _state.value.copy(
                             isSpeaking = false,
                             statusMessage = "Speech error occurred"
@@ -170,6 +181,10 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
             tts.setSpeechRate(_state.value.speechRate)
             tts.setPitch(_state.value.pitch)
 
+            // to track timing
+            speechStartTime = System.currentTimeMillis()
+            totalEstimatedDuration = estimateDuration(text)
+
             // Start lip sync animation
             startLipSync(text)
 
@@ -187,6 +202,11 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
     fun stop() {
         textToSpeech?.stop()
         stopLipSync()
+
+        // Reset timing
+        speechStartTime = 0
+        totalEstimatedDuration = 0
+
         _state.value = _state.value.copy(
             isSpeaking = false,
             statusMessage = "Speech stopped"
@@ -238,6 +258,31 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
                 _state.value = _state.value.copy(selectedLanguage = languageCode)
             }
         }
+    }
+
+    /**
+     * Get current playback position in milliseconds
+     * Estimates position based on elapsed time since speech started
+     */
+    fun getCurrentPosition(): Float {
+        return if (_state.value.isSpeaking && speechStartTime > 0) {
+            val elapsed = System.currentTimeMillis() - speechStartTime
+            elapsed.toFloat()
+        } else {
+            0f
+        }
+    }
+
+    /**
+     * Estimate total duration of text in milliseconds
+     * Average speaking rate: ~150 words per minute = 2.5 words/second = 400ms/word
+     */
+    private fun estimateDuration(text: String): Long {
+        val wordCount = text.split("\\s+".toRegex()).size
+        val baseRate = 400L // milliseconds per word
+        // Adjust for speech rate
+        val adjustedRate = (baseRate / _state.value.speechRate).toLong()
+        return wordCount * adjustedRate
     }
 
     /**

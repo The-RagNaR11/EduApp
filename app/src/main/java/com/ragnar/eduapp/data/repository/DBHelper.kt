@@ -1,12 +1,5 @@
 package com.ragnar.eduapp.data.repository
 
-class DBHelper {
-}
-
-
-/*
-package com.ragnar.eduapp.data.local
-
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
@@ -16,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper
 /**
  * Simple SQLite database for users and chat messages.
  */
-class DatabaseHelper(context: Context) :
+class DBHelper(context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
@@ -130,5 +123,3 @@ class DatabaseHelper(context: Context) :
         return db.delete(TABLE_CHAT, null, null)
     }
 }
-
- */

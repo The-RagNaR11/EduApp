@@ -80,6 +80,7 @@ import com.ragnar.eduapp.ui.theme.White
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
 import com.ragnar.eduapp.viewModels.speechModels.SpeechToText
 import com.ragnar.eduapp.viewModels.speechModels.TextToSpeech
+import kotlinx.coroutines.delay
 
 @Composable
 fun ChatBotScreen(
@@ -104,6 +105,9 @@ fun ChatBotScreen(
 
     val ttsState by ttsController.state.collectAsState() // TTS states
     val sttState by sttController.state.collectAsState() // STT states
+
+    // track current audio playback time
+    var currentAudioTime by remember { mutableStateOf(0f) }
 
     // Collects chat state from ChatViewModel
     val chatMessages by chatBotController.messages.collectAsState()
@@ -150,6 +154,19 @@ fun ChatBotScreen(
 //            onDismiss = { chatBotController.dismissPopUp() }
 //        )
 //    }
+
+//    Update audio time periodically while speaking
+    LaunchedEffect(ttsState.isSpeaking) {
+        if (ttsState.isSpeaking) {
+            while (true) {
+                // Get current position from TTS controller
+                currentAudioTime = ttsController.getCurrentPosition() / 1000f // ms to seconds
+                delay(50) // Update every 50ms
+            }
+        } else {
+            currentAudioTime = 0f // to reset when not speaking
+        }
+    }
 
     // Auto-start TTS when shouldStartTTS becomes true
     LaunchedEffect(shouldStartTTS) {
@@ -450,8 +467,18 @@ fun ChatBotScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
             ) {
 
-
-                ConceptMapModel(conceptMapJSON)
+                /**
+                 * Concept map model
+                 * parameters:
+                 * @param json: input json that contain all the node and edge relations
+                 * @param currentAudioTime: input from TTS of currently playing audio
+                 * @param isAudioPlaying: input from TTS if audio is playing or not
+                 */
+                ConceptMapModel(
+                    json = conceptMapJSON,
+                    currentAudioTime = currentAudioTime,
+                    isAudioPlaying = ttsState.isSpeaking
+                )
             }
             Spacer(modifier = Modifier.padding(10.dp))
             /*

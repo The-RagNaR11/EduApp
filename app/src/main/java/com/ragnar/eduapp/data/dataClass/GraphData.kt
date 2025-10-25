@@ -1,7 +1,8 @@
 package com.ragnar.eduapp.data.dataClass
 
-import android.R
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.json.Json
 
 @Serializable
 data class GraphData(
@@ -28,13 +29,24 @@ data class GraphData(
 
     @Serializable
     data class AudioSegment(
-        val startTime: Float,
-        val endTime: Float,
+        val segmentIndex: Int = 0,  // Add this field that's in the JSON
+        val startTime: Float = 0f,   // Keep for backward compatibility
+        val endTime: Float = 0f,     // Keep for backward compatibility
         val spokenText: String,
         val estimatedDuration: Float,
-        val highlightNodeId: List<String> = emptyList(),
-        val highlightEdgeIds : List<String> = emptyList(),
-        val showNodeIds: List<String> = emptyList(), // nodes to revel
-        val action: String = "introduce" // "introduce", "expand", "connect"
-    )
+        val highlightNodeIds: List<String> = emptyList(),  // Fixed typo: was highlightNodeId
+        val highlightEdgeIds: List<String> = emptyList(),
+        val showNodeIds: List<String> = emptyList(),
+        val action: String = "introduce"
+    ) {
+        // Compute startTime and endTime if not provided
+        fun computeTimes(previousSegments: List<AudioSegment>): AudioSegment {
+            if (startTime > 0f && endTime > 0f) return this
+
+            val computedStart = previousSegments.sumOf { it.estimatedDuration.toDouble() }.toFloat()
+            val computedEnd = computedStart + estimatedDuration
+
+            return copy(startTime = computedStart, endTime = computedEnd)
+        }
+    }
 }

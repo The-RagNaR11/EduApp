@@ -1,7 +1,6 @@
 package com.ragnar.eduapp.ui.components
 
 import android.util.Log
-import androidx.compose.animation.core.Animation
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -37,6 +36,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.nativeCanvas
@@ -54,6 +54,24 @@ import com.ragnar.eduapp.utils.GraphUtils
 import kotlinx.serialization.json.Json
 import kotlin.math.hypot
 
+/**
+ * ConceptMapModel - Audio-Synchronized Knowledge Graph Visualization
+ *
+ * This composable renders an interactive concept map that synchronizes with audio playback.
+ * It implements dynamic node visibility and highlighting based on the current audio position.
+ *
+ * @param json JSON string containing graph data (nodes, edges, audioSegments)
+ * @param currentAudioTime Current audio playback position in seconds
+ * @param isAudioPlaying Boolean indicating if audio is currently playing
+ *
+ * Features:
+ * - Audio-synchronized node/edge visibility
+ * - Progressive rendering based on audio segments
+ * - Highlighting of active nodes and edges
+ * - Pan and zoom gestures
+ * - Node dragging
+ * - Hierarchical layout
+ */
 @Composable
 fun ConceptMapModel(
     json: String,
@@ -61,63 +79,90 @@ fun ConceptMapModel(
     isAudioPlaying: Boolean = false
 ) {
 
-    val TAG: String = "ConceptMapModel"
-
-    val graphUtils: GraphUtils = GraphUtils()
+    val TAG = "ConceptMapModel"
+    val graphUtils = GraphUtils()
 
     /**
      * JSON Parsing with Error Handling
+     * Converts JSON string into GraphData object using Kotlin Serialization
+     * Falls back to default graph if parsing fails
      */
     val graphData = remember(json) {
         try {
-            Json.decodeFromString<GraphData>(json) // converts json into GraphData Object using kotlin Serialization
-        }catch (e: Exception) {
-            Log.e(TAG, "Error: error while parsing JSON: $e")
-            graphUtils.createDefaultGraphData() // if any error occurs then return the default graph data
+            Log.d(TAG, "Raw JSON received: $json")
+            val parsedData = Json.decodeFromString<GraphData>(json)
+            
+            // Compute startTime and endTime for audio segments if not provided
+            val processedAudioSegments = parsedData.audioSegments.mapIndexed { index, segment ->
+                if (segment.startTime == 0f && segment.endTime == 0f) {
+                    // Compute times based on previous segments
+                    val previousSegments = parsedData.audioSegments.take(index)
+                    segment.computeTimes(previousSegments)
+                } else {
+                    segment
+                }
+            }
+            
+            val processedData = parsedData.copy(audioSegments = processedAudioSegments)
+            
+            Log.d(TAG, "Successfully parsed GraphData:")
+            Log.d(TAG, "  - Main concept: ${processedData.main_concept}")
+            Log.d(TAG, "  - Nodes count: ${processedData.nodes.size}")
+            Log.d(TAG, "  - Edges count: ${processedData.edges.size}")
+            Log.d(TAG, "  - Audio segments count: ${processedData.audioSegments.size}")
+            
+            // Log computed audio segment times
+            processedData.audioSegments.forEachIndexed { index, segment ->
+                Log.d(TAG, "  - Segment $index: ${segment.startTime}s-${segment.endTime}s (${segment.estimatedDuration}s)")
+            }
+            
+            processedData
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing JSON: $e")
+            Log.e(TAG, "JSON content: $json")
+            graphUtils.createDefaultGraphData()
         }
     }
 
     /**
-     * Different paint object for
-     * 1. title
-     * 2. Node text
-     * 3. edge label
-     * Reason to have this
-     * Canvas object require Android native Paint object
-     * asFrameworkPaint() is used to convert compose Color into Android native Paint
+     * Paint objects for different text elements
+     * Android native Paint is required for Canvas text rendering
+     * asFrameworkPaint() converts Compose Color to Android native Paint
      */
-
     val titlePaint = remember {
         Paint().asFrameworkPaint().apply {
-            isAntiAlias = true // smooth Edges
-            textSize = 56f // large text for title
-            color = TextPrimary.toArgb() // text color
-            textAlign = android.graphics.Paint.Align.CENTER  // center alignment
-            isFakeBoldText = true // bold text
+            isAntiAlias = true
+            textSize = 56f
+            color = TextPrimary.toArgb()
+            textAlign = android.graphics.Paint.Align.CENTER
+            isFakeBoldText = true
         }
     }
+
     val textPaint = remember {
         Paint().asFrameworkPaint().apply {
-            isAntiAlias = true // smooth Edges
-            textSize = 28f // smaller text for text inside nodes
-            color = TextPrimary.toArgb() // text color
-            textAlign = android.graphics.Paint.Align.CENTER  // center alignment
+            isAntiAlias = true
+            textSize = 28f
+            color = TextPrimary.toArgb()
+            textAlign = android.graphics.Paint.Align.CENTER
         }
     }
+
     val edgeLabelPaint = remember {
         Paint().asFrameworkPaint().apply {
-            isAntiAlias = true // smooth Edges
-            textSize = 23f // even smaller text for edge label
-            color = TextSecondary.toArgb() // text color
-            textAlign = android.graphics.Paint.Align.CENTER  // center alignment
+            isAntiAlias = true
+            textSize = 23f
+            color = TextSecondary.toArgb()
+            textAlign = android.graphics.Paint.Align.CENTER
         }
     }
 
     /**
-     * Different color for different category of nodes
+     * Category-based color mapping for nodes
+     * Different concepts get different colors for visual distinction
      */
     fun colorForCategory(category: String) = when (category) {
-        "Core" -> Color(0xFF3B82F6)
+        "Core", "Main" -> Color(0xFF3B82F6)
         "Action" -> Color(0xFF10B981)
         "Outcome" -> Color(0xFFF59E0B)
         "Application" -> Color(0xFFEC4899)
@@ -132,25 +177,143 @@ fun ConceptMapModel(
         "Genetics" -> Color(0xFFA855F7)
         "Taxonomy" -> Color(0xFF3B82F6)
         "Agriculture" -> Color(0xFFF97316)
+        "Secondary" -> Color(0xFF8B5CF6)
+        "Leaf" -> Color(0xFF10B981)
         else -> Color(0xFF64748B)
     }
 
     /**
-     * Different state variables
+     * State variables for visualization control
      */
     val nodeRadius = 90f
-    // used to map node id with screen coordinates
-    // resets when node changes using remember(json)
-    val nodePosition = remember(json) { mutableStateMapOf<String, Offset>() }
-    var selectedNodeId by remember { mutableStateOf<String?>(null) } // track which node is being dragged (null mean none)
-    var scale by remember { mutableFloatStateOf(1f) } // track zoom level (1f = normal, 2f = 2x zoom)
-    var offset by remember { mutableStateOf(Offset.Zero) } // pan position for moving the entire screen
-    var canvasCenter by remember { mutableStateOf(Offset.Zero) } // center od canvas
 
+    // Maps node IDs to their screen positions (Offset)
+    // Recalculated when JSON changes
+    val nodePosition = remember(json) { mutableStateMapOf<String, Offset>() }
+
+    // Tracks which node is being dragged (null = none)
+    var selectedNodeId by remember { mutableStateOf<String?>(null) }
+
+    // Zoom level (1f = normal, 2f = 2x zoom, 0.25f = 25% zoom)
+    var scale by remember { mutableFloatStateOf(1f) }
+
+    // Pan offset for moving the entire canvas
+    var offset by remember { mutableStateOf(Offset.Zero) }
+
+    // Canvas center point
+    var canvasCenter by remember { mutableStateOf(Offset.Zero) }
 
     /**
-     * for smooth animation when a node is selected
-     * if selected then node grow by 125% when released then go back to normal
+     * =================================================================
+     * AUDIO SYNCHRONIZATION LOGIC - Dynamic Node Visibility Check
+     * =================================================================
+     *
+     * This section implements the core feature from the document:
+     * "The system continuously checks the synchronization map against
+     * the audio playback position"
+     *
+     * Event Trigger: When audio time enters segment range (Tstart < T < Tend)
+     * Node/Edge Lookup: Find elements associated with current segment
+     * Visualization Action: Show, hide, or highlight elements
+     */
+
+    /**
+     * Find the current active audio segment based on playback time
+     * Returns null if no segment is active
+     *
+     * Logic: Tstart <= currentTime <= Tend
+     */
+    val currentSegment = remember(currentAudioTime, graphData.audioSegments) {
+        if (isAudioPlaying && currentAudioTime > 0f) {
+            graphData.audioSegments.find { segment ->
+                currentAudioTime >= segment.startTime &&
+                        currentAudioTime <= segment.endTime
+            }
+        } else {
+            null
+        }
+    }
+
+    /**
+     * Build cumulative visibility set - nodes that should be visible
+     * Based on all segments up to and including the current one
+     *
+     * This ensures nodes remain visible once introduced
+     * Example: Segment 0 shows [A], Segment 1 shows [B, C]
+     *          At Segment 1, visible nodes = [A, B, C]
+     */
+    val visibleNodeIds = remember(currentSegment, graphData.audioSegments, isAudioPlaying) {
+        val visible = mutableSetOf<String>()
+
+        if (currentSegment != null) {
+            // Get index of current segment
+            val currentIndex = graphData.audioSegments.indexOf(currentSegment)
+
+            // Accumulate all showNodeIds from segment 0 to current
+            graphData.audioSegments.take(currentIndex + 1).forEach { segment ->
+                visible.addAll(segment.showNodeIds)
+            }
+        } else if (!isAudioPlaying) {
+            // When not playing, show all nodes (fallback to normal view)
+            visible.addAll(graphData.nodes.map { it.id })
+        }
+
+        visible
+    }
+
+    /**
+     * Get nodes to highlight in current segment
+     * These nodes get visual emphasis (thicker border, pulse effect)
+     */
+    val highlightedNodeIds = remember(currentSegment) {
+        currentSegment?.highlightNodeIds?.toSet() ?: emptySet()
+    }
+
+    /**
+     * Get edges to highlight in current segment
+     * These edges get emphasized (thicker line, brighter color)
+     */
+    val highlightedEdgeIds = remember(currentSegment) {
+        currentSegment?.highlightEdgeIds?.toSet() ?: emptySet()
+    }
+
+    /**
+     * Debug logging for audio synchronization
+     * Logs current state when segment changes
+     */
+    LaunchedEffect(currentSegment) {
+        currentSegment?.let { segment ->
+            Log.d(TAG, """
+                ════════════════════════════════════════════════════════
+                AUDIO SYNC - Segment Active
+                ════════════════════════════════════════════════════════
+                Time: ${currentAudioTime}s (${segment.startTime}s - ${segment.endTime}s)
+                Spoken: "${segment.spokenText}"
+                Action: ${segment.action}
+                ────────────────────────────────────────────────────────
+                Visible Nodes: ${visibleNodeIds.size} → $visibleNodeIds
+                Highlighted Nodes: ${highlightedNodeIds.size} → $highlightedNodeIds
+                Highlighted Edges: ${highlightedEdgeIds.size} → $highlightedEdgeIds
+                ════════════════════════════════════════════════════════
+            """.trimIndent())
+        } ?: run {
+            Log.d(TAG, "No active audio segment at time ${currentAudioTime}s")
+        }
+    }
+    
+    /**
+     * Log audio segments data for debugging
+     */
+    LaunchedEffect(graphData.audioSegments) {
+        Log.d(TAG, "Audio segments loaded: ${graphData.audioSegments.size} segments")
+        graphData.audioSegments.forEachIndexed { index, segment ->
+            Log.d(TAG, "Segment $index: ${segment.startTime}s-${segment.endTime}s, action: ${segment.action}")
+        }
+    }
+
+    /**
+     * Smooth animation when a node is selected (dragged)
+     * Selected nodes grow to 115% of normal size
      */
     val animationScale by animateFloatAsState(
         targetValue = if (selectedNodeId != null) 1.15f else 1f,
@@ -158,120 +321,128 @@ fun ConceptMapModel(
     )
 
     /**
-     * Main UI screen contains two major part
-     * 1. Canvas to draw all node and edges i.e. graph
-     * 2. Two(2) overlay buttons for zoom-in(+) and zoom-out(-)
+     * Main UI Layout
+     * Box contains:
+     * 1. Canvas (graph rendering)
+     * 2. Zoom controls (floating buttons)
      */
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-
         /**
-         * A custom surface where graphs are being rendered
+         * ═══════════════════════════════════════════════════════════
+         * CANVAS - Graph Rendering Surface
+         * ═══════════════════════════════════════════════════════════
          */
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .background(BackgroundPrimary)
+
                 /**
-                 * For zoom gesture
+                 * Gesture Handler: Pinch-to-zoom
+                 * Two-finger pinch gesture for zooming
+                 * Zoom range: 25% to 400%
                  */
                 .pointerInput(Unit) {
-                    // zoom gesture
-                    detectTransformGestures { _, pan, zoom, _ -> // to detect two finger touch
-                        // two finger pan and pinch-zoom
-                        scale = (scale * zoom).coerceIn(0.25f, 4f) // from 30% to 400% zoom
-                        offset += pan / scale // to adjust the pan speed based on zoom level
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        scale = (scale * zoom).coerceIn(0.25f, 4f)
+                        offset += pan / scale
                     }
                 }
 
                 /**
-                 * for drag gesture
-                  */
+                 * Gesture Handler: Node dragging
+                 * Single-finger drag to reposition nodes
+                 *
+                 * Steps:
+                 * 1. Detect finger down
+                 * 2. Convert touch position to graph space
+                 * 3. Find if touch is within any node's radius
+                 * 4. Track finger movement and update node position
+                 * 5. Clear selection on finger up
+                 */
                 .pointerInput(scale, offset, canvasCenter) {
-                    //  drag gesture
                     awaitEachGesture {
-                        val down = awaitFirstDown() // waits for finger down
+                        val down = awaitFirstDown()
 
-                        // converts the touch position to graph position/space
+                        // Convert touch position from screen space to graph space
                         val adjustedTouch = (down.position - offset - canvasCenter) / scale + canvasCenter
 
-                        // to find which node was touched by checking if touch was is in any node radius
+                        // Find touched node (if any)
                         val touchedNodeId = nodePosition.entries.find { (_, pos) ->
                             adjustedTouch.getDistanceTo(pos) <= nodeRadius
                         }?.key
 
                         if (touchedNodeId != null) {
-                            // marking the node as selected node
                             selectedNodeId = touchedNodeId
 
-                            // to track the finger movement
+                            // Track drag movement
                             drag(down.id) { change ->
                                 val dragAmount = change.positionChange()
                                 nodePosition[touchedNodeId]?.let { currentPosition ->
                                     nodePosition[touchedNodeId] = currentPosition + (dragAmount / scale)
                                 }
-                                change.consume() // marks the gesture event as handled to avoid conflict with other events
+                                change.consume()
                             }
-                            selectedNodeId = null // clear the selection after release of finger
-                        }
 
+                            selectedNodeId = null
+                        }
                     }
                 }
         ) {
-
-            // calculate the center point and assign it to mutable variable i.e. canvasCenter
+            // Calculate and store canvas center
             val center = Offset(size.width / 2, size.height / 2)
             canvasCenter = center
 
             /**
-             * Safety Check
-             * If the graph data is not found then exit here
+             * Safety check - exit if no data
              */
             if (graphData.nodes.isEmpty()) {
                 drawIntoCanvas { canvas ->
                     canvas.nativeCanvas.drawText("No data found", center.x, center.y, textPaint)
                 }
+                return@Canvas
             }
 
             /**
-             * Hierarchical Layout Algorithm
-             * create a map with key and value as all the child node eg. {A -> [B, C]}
-             * create a inDegree to store how many node point to each node
+             * ═══════════════════════════════════════════════════════
+             * HIERARCHICAL LAYOUT ALGORITHM
+             * ═══════════════════════════════════════════════════════
+             *
+             * Only runs once when positions are not yet calculated
+             * Creates a tree-like structure with levels:
+             * Level 0: Root nodes (no incoming edges)
+             * Level 1: Children of root
+             * Level 2: Grandchildren, etc.
              */
-
             if (nodePosition.isEmpty()) {
-                // to build the adjacency list
-                val adjacencyList = mutableMapOf<String, MutableList<String>>() // create a map like {A -> [B, C]}
-                val inDegree = mutableMapOf<String, Int>() // to store count of how many node point to each node
+                // Build adjacency list: Map<ParentId, List<ChildrenIds>>
+                val adjacencyList = mutableMapOf<String, MutableList<String>>()
+                val inDegree = mutableMapOf<String, Int>()
 
-                // add data to above two variables
-                graphData.edges.forEach { edge ->
-                    adjacencyList[edge.from]?.add(edge.to) // populate the adjancyList
-                    inDegree[edge.to] = (inDegree[edge.to] ?: 0) + 1 // if there is no in-degree then 0 and add 1 to each finding
+                graphData.nodes.forEach { node ->
+                    adjacencyList[node.id] = mutableListOf()
+                    inDegree[node.id] = 0
                 }
 
+                graphData.edges.forEach { edge ->
+                    adjacencyList[edge.from]?.add(edge.to)
+                    inDegree[edge.to] = (inDegree[edge.to] ?: 0) + 1
+                }
+
+                // Find root nodes (inDegree = 0)
+                val rootNodes = graphData.nodes.filter { (inDegree[it.id] ?: 0) == 0 }
+                val roots = if (rootNodes.isEmpty()) listOf(graphData.nodes.first()) else rootNodes
+
+                // Layout parameters
+                val startY = 180f
+                val levelHeight = 380f
+                val horizontalSpacing = 350f
+
                 /**
-                 * Finding the root node
-                 * The root node should have no incoming node
-                 * in case of cycle then use 1st node as root node
-                 */
-                val rootNode = graphData.nodes.filter { (inDegree[it.id] ?: 0) == 0 }
-                val roots = if ( rootNode.isEmpty()) listOf(graphData.nodes.first()) else rootNode // fallback in case of cycle
-
-                // Hierarchical layout parameters
-                val startY = 180f // top margin for title
-                val levelHeight = 380f // vertical space between levels
-                val horizontalSpacing = 350f // horizontal space between sibling nodes
-
-
-                /**
-                 * BFS(Breadth First Search) leveling
-                 * Working:
-                 * 1. assign each node a level i.e. depth in the tree
-                 *      level 0 : root
-                 *      level 1 : children
-                 *      level 2 : grandchildren and so on
+                 * BFS (Breadth-First Search) for level assignment
+                 * Assigns each node a level number (depth in tree)
                  */
                 val levels = mutableMapOf<String, Int>()
                 val queue = ArrayDeque<Pair<String, Int>>()
@@ -282,7 +453,7 @@ fun ConceptMapModel(
                     visited.add(root.id)
                 }
 
-                while (queue.isNotEmpty()){
+                while (queue.isNotEmpty()) {
                     val (nodeId, level) = queue.removeFirst()
                     levels[nodeId] = level
 
@@ -295,20 +466,21 @@ fun ConceptMapModel(
                 }
 
                 /**
-                 * Positioning nodes
+                 * Position nodes based on their level
+                 * Each level is centered horizontally
                  */
-                val nodesByLevel = levels.entries.groupBy ({ it.value }, {it.key})
+                val nodesByLevel = levels.entries.groupBy({ it.value }, { it.key })
 
                 nodesByLevel.forEach { (level, nodesInLevel) ->
-                    val y = startY + level + levelHeight // vertical position
-                    val levelWidth = (nodesInLevel.size - 1) * horizontalSpacing // total width of each level
-                    val startX = center.x - levelWidth / 2 // place then in center horizontally
+                    val y = startY + level * levelHeight
+                    val levelWidth = (nodesInLevel.size - 1) * horizontalSpacing
+                    val startX = center.x - levelWidth / 2
 
                     nodesInLevel.forEachIndexed { index, nodeId ->
                         val x = if (nodesInLevel.size == 1) {
-                            center.x // if there is a single node then place it in center
+                            center.x
                         } else {
-                            startX + index + horizontalSpacing // to spread node evenly in each level
+                            startX + index * horizontalSpacing
                         }
                         nodePosition[nodeId] = Offset(x, y)
                     }
@@ -316,39 +488,58 @@ fun ConceptMapModel(
             }
 
             /**
-             * Transform for zoom and pan
+             * ═══════════════════════════════════════════════════════
+             * APPLY ZOOM AND PAN TRANSFORMATION
+             * ═══════════════════════════════════════════════════════
+             * All subsequent drawing is transformed
              */
-
-            withTransform ({
-                scale(scaleX = scale, scaleY = scale, pivot = center) // to scale around the center point
-                translate(left = offset.x, top = offset.y) // to perform pan based on offset
+            withTransform({
+                scale(scaleX = scale, scaleY = scale, pivot = center)
+                translate(left = offset.x, top = offset.y)
             }) {
-
                 /**
-                 * Drawing the edges i.e. relationship between nodes
+                 * ═══════════════════════════════════════════════════
+                 * DRAW EDGES (Relationships between nodes)
+                 * ═══════════════════════════════════════════════════
+                 *
+                 * AUDIO SYNC: Only draw edges if both endpoints are visible
+                 * AUDIO SYNC: Highlight edges if in highlightedEdgeIds
                  */
                 graphData.edges.forEach { edge ->
-                    val fromPos = nodePosition[edge.from]  // position of from node
-                    val toPos = nodePosition[edge.to] // position of to node
+                    val fromPos = nodePosition[edge.from]
+                    val toPos = nodePosition[edge.to]
+
+                    // Skip edge if either endpoint is not visible
+                    if (!visibleNodeIds.contains(edge.from) ||
+                        !visibleNodeIds.contains(edge.to)) {
+                        return@forEach
+                    }
 
                     if (fromPos != null && toPos != null) {
+                        val isHighlighted = highlightedEdgeIds.contains(edge.id)
+
+                        // Create curved path (quadratic Bezier curve)
                         val path = Path().apply {
                             moveTo(fromPos.x, fromPos.y)
                             val controlX = (fromPos.x + toPos.x) / 2
                             val controlY = fromPos.y + (toPos.y - fromPos.y) * 0.3f
-                            quadraticTo(controlX, controlY, toPos.x, toPos.y) // to create  a arc instead of a straight line
+                            quadraticTo(controlX, controlY, toPos.x, toPos.y)
                         }
-                         drawPath(
-                             path,
-                             color = Color(0xFF6B7280), // TextSecondaryColor
-                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
-                         )
-                        /**
-                         * adding the label to edges
-                         */
-                        // position of the edge label
-                        val midX = (fromPos.x + toPos.x) / 2 // middle of edge horizontally
-                        val midY = (fromPos.y + toPos.y) / 2 - 30 // slightly above edge
+
+                        // Draw edge with highlighting
+                        drawPath(
+                            path,
+                            color = if (isHighlighted) {
+                                Color(0xFF3B82F6).copy(alpha = 1f) // Bright blue when highlighted
+                            } else {
+                                Color(0xFF6B7280).copy(alpha = 0.6f) // Gray when normal
+                            },
+                            style = Stroke(width = if (isHighlighted) 5.dp.toPx() else 3.dp.toPx())
+                        )
+
+                        // Draw edge label
+                        val midX = (fromPos.x + toPos.x) / 2
+                        val midY = (fromPos.y + toPos.y) / 2 - 30
 
                         drawIntoCanvas { canvas ->
                             canvas.nativeCanvas.drawText(edge.label, midX, midY, edgeLabelPaint)
@@ -357,38 +548,67 @@ fun ConceptMapModel(
                 }
 
                 /**
-                 * Drawing the nodes into the canvas
+                 * ═══════════════════════════════════════════════════
+                 * DRAW NODES
+                 * ═══════════════════════════════════════════════════
+                 *
+                 * AUDIO SYNC: Only draw nodes if in visibleNodeIds
+                 * AUDIO SYNC: Highlight nodes if in highlightedNodeIds
+                 * AUDIO SYNC: Add pulse effect to highlighted nodes
                  */
                 graphData.nodes.forEach { node ->
+                    // Skip node if not visible
+                    if (!visibleNodeIds.contains(node.id)) {
+                        return@forEach
+                    }
+
                     val pos = nodePosition[node.id] ?: return@forEach
 
-                    val color = if (selectedNodeId == node.id) {
-                        colorForCategory(node.category).copy(alpha = 0.9f)  // Highlight
-                    } else {
-                        colorForCategory(node.category)
-                    }
-                    val radius = if (selectedNodeId == node.id) {
-                        nodeRadius * animationScale
-                    } else {
-                        nodeRadius
+                    val isHighlighted = highlightedNodeIds.contains(node.id)
+                    val isSelected = selectedNodeId == node.id
+
+                    // Node color with highlighting
+                    val color = when {
+                        isSelected -> colorForCategory(node.category).copy(alpha = 0.9f)
+                        isHighlighted -> colorForCategory(node.category).copy(alpha = 1f)
+                        else -> colorForCategory(node.category).copy(alpha = 0.8f)
                     }
 
-                    // drop shadow
+                    // Node radius with selection/highlight scaling
+                    val radius = when {
+                        isSelected -> nodeRadius * animationScale
+                        isHighlighted -> nodeRadius * 1.08f // Slightly larger when highlighted
+                        else -> nodeRadius
+                    }
+
+                    // Drop shadow for depth
                     drawCircle(
-                        color = Color.LightGray,
+                        color = Color.Black.copy(alpha = 0.15f),
                         radius = radius,
-                        center = pos + Offset(4f, 4f) // offset for depth
+                        center = pos + Offset(4f, 4f)
                     )
-                    // main node
+
+                    // Main node circle
                     drawCircle(color, radius, center = pos)
 
-                    //inner highlight circle
+                    // Highlight ring for audio-synced nodes
+                    if (isHighlighted) {
+                        drawCircle(
+                            color = Color(0xFFFFD700).copy(alpha = 0.5f), // Golden glow
+                            radius = radius + 12f,
+                            center = pos,
+                            style = Stroke(width = 4.dp.toPx())
+                        )
+                    }
+
+                    // Inner highlight circle (for shine effect)
                     drawCircle(
-                        color = Color.White.copy(alpha = 0.2f), // for a little shine
+                        color = Color.White.copy(alpha = 0.25f),
                         radius = radius * 0.85f,
                         center = pos
                     )
-                    // Node label
+
+                    // Node label text
                     drawMultiLineText(
                         text = node.label,
                         center = pos,
@@ -399,31 +619,36 @@ fun ConceptMapModel(
             }
 
             /**
-             * Draw the title
-             * not affected by zoom or pan
+             * Draw title (not affected by zoom/pan)
+             * Always visible at top of canvas
              */
             drawIntoCanvas { canvas ->
                 val titleY = 60f
-                canvas.nativeCanvas.drawText(graphData.main_concept, center.x, titleY, titlePaint)
+                canvas.nativeCanvas.drawText(
+                    graphData.main_concept,
+                    center.x,
+                    titleY,
+                    titlePaint
+                )
             }
-
-
         }
 
         /**
-         * Column for two buttons used for zoom-in(+) and zoom-out(-)
-         */Unit
+         * ═══════════════════════════════════════════════════════════
+         * ZOOM CONTROLS - Floating Action Buttons
+         * ═══════════════════════════════════════════════════════════
+         */
         Column(
             modifier = Modifier
-                .align ( Alignment.TopEnd )
+                .align(Alignment.TopEnd)
                 .padding(16.dp)
         ) {
-            // zoom in button (+)
+            // Zoom In Button (+)
             FloatingActionButton(
                 onClick = {
                     scale = (scale * 1.25f).coerceIn(0.25f, 4f)
-                    Log.d(TAG, "Zoom In button clicked")
-                } ,
+                    Log.d(TAG, "Zoom In: scale = $scale")
+                },
                 modifier = Modifier.size(37.dp),
                 shape = RectangleShape,
                 containerColor = textFieldBackgroundColor,
@@ -431,19 +656,19 @@ fun ConceptMapModel(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Zoom in Icon",
+                    contentDescription = "Zoom In",
                     tint = TextSecondary
                 )
             }
 
             Spacer(modifier = Modifier.size(10.dp))
 
-            // zoom out button (-)
+            // Zoom Out Button (-)
             FloatingActionButton(
                 onClick = {
                     scale = (scale / 1.25f).coerceIn(0.25f, 4f)
-                    Log.d(TAG, "Zoom Out button clicked")
-                } ,
+                    Log.d(TAG, "Zoom Out: scale = $scale")
+                },
                 modifier = Modifier.size(37.dp),
                 shape = RectangleShape,
                 containerColor = textFieldBackgroundColor,
@@ -451,7 +676,7 @@ fun ConceptMapModel(
             ) {
                 Icon(
                     imageVector = Icons.Default.Remove,
-                    contentDescription = "Zoom in Icon",
+                    contentDescription = "Zoom Out",
                     tint = TextSecondary
                 )
             }
@@ -460,10 +685,25 @@ fun ConceptMapModel(
 }
 
 /**
- * Split text into words
- * Add words to line until it exceeds maxWidth
- * Start new line when overflow happens
- * Draw each line with proper vertical spacing
+ * ═══════════════════════════════════════════════════════════════════
+ * HELPER FUNCTIONS
+ * ═══════════════════════════════════════════════════════════════════
+ */
+
+/**
+ * Draw multi-line text within a maximum width
+ * Wraps words to fit within the specified width
+ *
+ * Algorithm:
+ * 1. Split text into words
+ * 2. Build lines by adding words until maxWidth is exceeded
+ * 3. Start new line when overflow occurs
+ * 4. Draw each line with proper vertical spacing
+ *
+ * @param text Text to draw
+ * @param center Center position for text
+ * @param textPaint Paint object with text styling
+ * @param maxWidth Maximum width before wrapping
  */
 fun DrawScope.drawMultiLineText(
     text: String,
@@ -475,6 +715,7 @@ fun DrawScope.drawMultiLineText(
     val lines = mutableListOf<String>()
     var currentLine = ""
 
+    // Build lines
     for (word in words) {
         val testLine = if (currentLine.isEmpty()) word else "$currentLine $word"
         if (textPaint.measureText(testLine) > maxWidth) {
@@ -482,22 +723,33 @@ fun DrawScope.drawMultiLineText(
                 lines.add(currentLine)
             }
             currentLine = word
-        }
-        else {
+        } else {
             currentLine = testLine
+        }
+    }
+    if (currentLine.isNotEmpty()) {
+        lines.add(currentLine)
+    }
+
+    // Draw lines
+    val lineHeight = textPaint.textSize * 1.2f
+    val totalHeight = lines.size * lineHeight
+    val startY = center.y - (totalHeight / 2) + (lineHeight / 2)
+
+    drawIntoCanvas { canvas ->
+        lines.forEachIndexed { index, line ->
+            val y = startY + (index * lineHeight)
+            canvas.nativeCanvas.drawText(line, center.x, y, textPaint)
         }
     }
 }
 
+/**
+ * Calculate distance between two points
+ * Uses Pythagorean theorem: d = √((x2-x1)² + (y2-y1)²)
+ *
+ * @param other Target point
+ * @return Distance in pixels
+ */
 private fun Offset.getDistanceTo(other: Offset): Float =
     hypot(x - other.x, y - other.y)
-
-/**
- * Alternative method but less precise
- * fun Offset.getDistanceTo(other: Offset): Float {
- *     val dx = x - other.x
- *     val dy = y - other.y
- *     return sqrt(dx * dx + dy * dy)
- * }
- */
-

@@ -140,12 +140,16 @@ class ChatViewModel(
 
     private fun startProgressiveConceptMap(conceptMapJson: String) {
         conceptMapJob?.cancel()
+        
+        Log.d("ChatViewModel", "Starting progressive concept map with JSON: $conceptMapJson")
 
         conceptMapJob = viewModelScope.launch {
             try {
                 val jsonObj = JSONObject(conceptMapJson)
                 val nodesArray = jsonObj.getJSONArray("nodes")
                 val edgesArray = jsonObj.getJSONArray("edges")
+                
+                Log.d("ChatViewModel", "Parsed JSON - Nodes: ${nodesArray.length()}, Edges: ${edgesArray.length()}")
 
                 val totalNodes = nodesArray.length()
                 val totalEdges = edgesArray.length()
@@ -155,9 +159,16 @@ class ChatViewModel(
                     return@launch
                 }
 
-                // Start with empty concept map (but keep main_concept)
+                // Start with empty concept map (but keep main_concept and audioSegments)
                 val progressiveNodes = JSONArray()
                 val progressiveEdges = JSONArray()
+                
+                // Preserve audioSegments from original JSON
+                val audioSegments = if (jsonObj.has("audioSegments")) {
+                    jsonObj.getJSONArray("audioSegments")
+                } else {
+                    JSONArray()
+                }
 
                 // Add nodes one by one with delay
                 for (i in 0 until totalNodes) {
@@ -168,6 +179,7 @@ class ChatViewModel(
                         put("main_concept", jsonObj.getString("main_concept"))
                         put("nodes", progressiveNodes)
                         put("edges", JSONArray()) // No edges yet
+                        put("audioSegments", audioSegments) // Preserve audio segments
                     }
 
                     _conceptMapJSON.value = progressMap.toString()
@@ -185,6 +197,7 @@ class ChatViewModel(
                         put("main_concept", jsonObj.getString("main_concept"))
                         put("nodes", progressiveNodes)
                         put("edges", progressiveEdges)
+                        put("audioSegments", audioSegments) // Preserve audio segments
                     }
 
                     _conceptMapJSON.value = progressMap.toString()

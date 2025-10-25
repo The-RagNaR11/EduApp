@@ -156,22 +156,26 @@ fun ChatBotScreen(
 //    }
 
 //    Update audio time periodically while speaking
-    LaunchedEffect(ttsState.isSpeaking) {
-        if (ttsState.isSpeaking) {
-            while (true) {
-                // Get current position from TTS controller
-                currentAudioTime = ttsController.getCurrentPosition() / 1000f // ms to seconds
-                delay(50) // Update every 50ms
-            }
-        } else {
-            currentAudioTime = 0f // to reset when not speaking
+LaunchedEffect(ttsState.isSpeaking) {
+    if (ttsState.isSpeaking) {
+        while (true) {
+            // Get current position from TTS controller
+            currentAudioTime = ttsController.getCurrentPosition() / 1000f // ms to seconds
+            delay(50) // Update every 50ms
         }
+    } else {
+        // Don't reset currentAudioTime to 0 when TTS finishes
+        // This allows the concept map to maintain the final state
+        // The ConceptMapModel will handle showing all nodes when isAudioPlaying = false
     }
+}
 
     // Auto-start TTS when shouldStartTTS becomes true
     LaunchedEffect(shouldStartTTS) {
         if (shouldStartTTS && fullTextForTTS.isNotBlank()) {
             if (ttsState.isInitialized) {
+                // Reset audio time when starting new TTS
+                currentAudioTime = 0f
                 ttsController.speak(fullTextForTTS)
             }
         }

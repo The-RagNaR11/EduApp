@@ -1,9 +1,9 @@
 package com.ragnar.eduapp.core.chatBot
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ragnar.eduapp.data.model.ChatMessageModel
+import com.ragnar.eduapp.utils.DebugLogger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -82,10 +82,10 @@ class ChatViewModel(
                 // Update concept map progressively
                 startProgressiveConceptMap(conceptMapJson)
 
-                Log.i("ChatViewModel", "Success: Answer and concept map updated")
+                DebugLogger.debugLog("ChatViewModel", "Success: Answer and concept map updated")
 
             } catch (e: Exception) {
-                Log.e("ChatViewModel", "Error sending message: ${e.message}", e)
+                DebugLogger.errorLog("ChatViewModel", "Error sending message: ${e.message}")
                 _messages.value += ChatMessageModel(
                     content = "Sorry, I encountered an error: ${e.message}",
                     sender = "ai",
@@ -140,16 +140,15 @@ class ChatViewModel(
 
     private fun startProgressiveConceptMap(conceptMapJson: String) {
         conceptMapJob?.cancel()
-        
-        Log.d("ChatViewModel", "Starting progressive concept map with JSON: $conceptMapJson")
+        DebugLogger.debugLog("ChatViewModel","Starting progressive concept map with JSON: $conceptMapJson")
 
         conceptMapJob = viewModelScope.launch {
             try {
                 val jsonObj = JSONObject(conceptMapJson)
                 val nodesArray = jsonObj.getJSONArray("nodes")
                 val edgesArray = jsonObj.getJSONArray("edges")
-                
-                Log.d("ChatViewModel", "Parsed JSON - Nodes: ${nodesArray.length()}, Edges: ${edgesArray.length()}")
+
+                DebugLogger.debugLog("ChatViewModel", "Parsed JSON - Nodes: ${nodesArray.length()}, Edges: ${edgesArray.length()}")
 
                 val totalNodes = nodesArray.length()
                 val totalEdges = edgesArray.length()
@@ -206,10 +205,10 @@ class ChatViewModel(
                     delay(300L)
                 }
 
-                Log.i("ChatViewModel", "Concept map animation complete")
+                DebugLogger.debugLog("ChatViewModel", "Concept map animation complete")
 
             } catch (e: Exception) {
-                Log.e("ChatViewModel", "Error animating concept map: ${e.message}", e)
+                DebugLogger.errorLog("ChatViewModel", "Error animating concept map: ${e.message}")
                 // Fallback: show complete map
                 _conceptMapJSON.value = conceptMapJson
             }

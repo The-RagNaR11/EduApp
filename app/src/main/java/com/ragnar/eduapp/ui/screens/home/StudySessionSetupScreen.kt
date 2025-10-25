@@ -1,6 +1,5 @@
 package com.ragnar.eduapp.ui.screens.home
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +26,7 @@ import com.ragnar.eduapp.ui.components.DropDownMenuModel
 import com.ragnar.eduapp.ui.theme.*
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.ui.components.ChapterSelectionModel
+import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,9 +161,9 @@ fun StudySessionSetupScreen(navController: NavController) {
                 Button(
                     onClick = {
 
-                        Log.d("StudySessionSetupScreen","Syllabus: $selectedSyllabus")
-                        Log.d("StudySessionSetupScreen","Subject: $selectedSubject")
-                        Log.d("StudySessionSetupScreen","Chapters: $selectedChapters")
+                        DebugLogger.debugLog("StudySessionSetupScreen","Syllabus: $selectedSyllabus")
+                        DebugLogger.debugLog("StudySessionSetupScreen","Subject: $selectedSubject")
+                        DebugLogger.debugLog("StudySessionSetupScreen","Chapters: $selectedChapters")
 
                         SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_CHAPTER_LIST,
                             selectedChapters.toString()

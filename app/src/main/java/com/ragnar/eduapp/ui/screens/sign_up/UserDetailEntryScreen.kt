@@ -69,6 +69,7 @@ import com.ragnar.eduapp.ui.theme.TextOnPrimary
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary
 import com.ragnar.eduapp.ui.theme.White
+import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
 
 @Composable
@@ -294,7 +295,7 @@ fun UserDetailEntryScreen(navController: NavController) {
                         // Which makes the Name, Phone Number, and School Name as required and ambition as optional
                         enabled = phoneNumber.isNotBlank() && schoolName.isNotBlank(),
                         onClick = {
-                            Log.i("SignUpScreen", "Get Started Button Clicked")
+                            DebugLogger.debugLog("SignUpScreen", "Get Started Button Clicked")
                             SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_PHONE_NUMBER, phoneNumber)
                             SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_SCHOOL_NAME, schoolName)
                             SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_AMBITION, ambitionText)

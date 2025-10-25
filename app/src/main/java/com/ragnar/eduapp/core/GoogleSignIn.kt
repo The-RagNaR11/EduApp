@@ -18,6 +18,7 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.data.model.GoogleUserInfo
+import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.GoogleUserInfoExtractor
 
 import kotlinx.coroutines.CoroutineScope
@@ -48,7 +49,7 @@ class GoogleSignIn {
                                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
                                 val googleTokenId = googleIdTokenCredential.idToken
 
-//                                Log.d("GoogleSignIn", "Google Token Id: $googleTokenId")
+//                                DebugLogger.debugLog("GoogleSignIn", "Google Token Id: $googleTokenId")
 //                                Toast.makeText(context, "Sign-in cancelled. Please try again.", Toast.LENGTH_SHORT).show()
 
 
@@ -60,14 +61,14 @@ class GoogleSignIn {
                             }
                         }
                         else -> {
-                            Log.e("GoogleSignIn", "Unexpected credential type: ${result.credential.type}")
+                            DebugLogger.errorLog("GoogleSignIn", "Unexpected credential type: ${result.credential.type}")
                         }
                     }
                 } catch (e: NoCredentialException) {
-                    Log.e("GoogleSignIn", "No credentials found", e)
+                    DebugLogger.errorLog("GoogleSignIn", "No credentials found $e")
                     launcher?.launch(getIntent())
                 } catch (e: GetCredentialException) {
-                    Log.e("GoogleSignIn", "Credential exception", e)
+                    DebugLogger.errorLog("GoogleSignIn", "Credential exception $e")
                     e.printStackTrace()
                 }
             }

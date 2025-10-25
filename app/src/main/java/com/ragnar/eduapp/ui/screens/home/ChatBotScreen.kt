@@ -77,6 +77,7 @@ import com.ragnar.eduapp.ui.theme.SendButtonColor
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary
 import com.ragnar.eduapp.ui.theme.White
+import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
 import com.ragnar.eduapp.viewModels.speechModels.SpeechToText
 import com.ragnar.eduapp.viewModels.speechModels.TextToSpeech
@@ -91,7 +92,7 @@ fun ChatBotScreen(
 
     val context = LocalContext.current
     val userClass: String = SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_CLASS).toString()
-    val nodeNumber = "6";
+    val nodeNumber = "10";
     val maxWord = "100"
 
     val chatBotController: ChatViewModel = viewModel(
@@ -426,7 +427,7 @@ LaunchedEffect(ttsState.isSpeaking) {
                         // mic button
                         IconButton(
                             onClick = {
-                                Log.i("ChatScreen", "Mic Button Clicked")
+                                DebugLogger.debugLog("ChatScreen", "Mic Button Clicked")
                                 if (!sttState.isSpeaking) {
                                     if (sttState.isInitialized && sttState.hasPermission) {
                                         sttController.startListening()

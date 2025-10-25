@@ -1,19 +1,33 @@
 package com.ragnar.eduapp.ui.screens.sign_up
 
 import android.content.Context
-import android.content.SharedPreferences
-import android.util.Log
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,14 +36,18 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.ui.components.LanguageOptionModel
 import com.ragnar.eduapp.ui.components.SignUpPageFooterModel
-import com.ragnar.eduapp.ui.theme.*
+import com.ragnar.eduapp.ui.theme.BackgroundSecondary
+import com.ragnar.eduapp.ui.theme.BrandPrimary
+import com.ragnar.eduapp.ui.theme.TextPrimary
+import com.ragnar.eduapp.ui.theme.TextSecondary
+import com.ragnar.eduapp.ui.theme.White
+import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
 
 /**
@@ -136,7 +154,7 @@ fun LanguageSelectionScreen(navController: NavController) {
                     selected = selectedLanguage == language,
                     onClick = {
                         selectedLanguage = language
-                        Log.i("LanguageSelectionScreen", "Selected Language: $selectedLanguage")
+                        DebugLogger.debugLog("LanguageSelectionScreen", "Selected Language: $selectedLanguage")
                     }
                 )
                 Spacer(modifier = Modifier.height(10.dp))
@@ -152,7 +170,7 @@ fun LanguageSelectionScreen(navController: NavController) {
              */
             Button(
                 onClick = {
-                    Log.i("LanguageSelectionScreen", "Confirm Button Clicked with selected Language: $selectedLanguage")
+                    DebugLogger.debugLog("LanguageSelectionScreen", "Confirm Button Clicked with selected Language: $selectedLanguage")
 
                     // Saves the selected language to Shared Preference
                     SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_LANGUAGE, selectedLanguage)

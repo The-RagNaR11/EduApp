@@ -5,10 +5,10 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
-import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.lifecycle.ViewModel
+import com.ragnar.eduapp.utils.DebugLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,7 +71,7 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
         if (textToSpeech != null) return
 
         updateStatus("Initializing Text-to-Speech...")
-        Log.d("TextToSpeech", "Initializing Text-to-Speech...")
+        DebugLogger.debugLog("TextToSpeech", "Initializing Text-to-Speech...")
         textToSpeech = TextToSpeech(context, this)
     }
 
@@ -157,7 +157,7 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
             _state.value = _state.value.copy(
                 statusMessage = "Error: TTS initialization failed"
             )
-            Log.e("TTS", "Initialization failed with status: $status")
+            DebugLogger.errorLog("TTS", "Initialization failed with status: $status")
         }
     }
 
@@ -327,7 +327,7 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
             webView?.evaluateJavascript(
                 "window.AndroidLipSyncAPI.switchCharacter('$character')"
             ) { result ->
-                Log.d("LipSync", "Character switch result: $result")
+                DebugLogger.debugLog("LipSync", "Character switch result: $result")
             }
         }
     }
@@ -343,7 +343,7 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
             webView?.evaluateJavascript(
                 "window.AndroidLipSyncAPI.toggleDebug($newDebugMode)"
             ) { result ->
-                Log.d("LipSync", "Debug toggle result: $result")
+                DebugLogger.debugLog("LipSync", "Debug toggle result: $result")
             }
         }
     }
@@ -356,7 +356,7 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
             webView?.evaluateJavascript(
                 "window.AndroidLipSyncAPI.testAnimation()"
             ) { result ->
-                Log.d("LipSync", "Test animation result: $result")
+                DebugLogger.debugLog("LipSync", "Test animation result: $result")
             }
         }
     }
@@ -371,7 +371,7 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
             webView?.evaluateJavascript(
                 "window.AndroidLipSyncAPI.startLipSync('$escapedText')"
             ) { result ->
-                Log.d("LipSync", "Start lip sync result: $result")
+                DebugLogger.debugLog("LipSync", "Start lip sync result: $result")
             }
         }
     }
@@ -384,7 +384,7 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
             webView?.evaluateJavascript(
                 "window.AndroidLipSyncAPI.stopLipSync()"
             ) { result ->
-                Log.d("LipSync", "Stop lip sync result: $result")
+                DebugLogger.debugLog("LipSync", "Stop lip sync result: $result")
             }
         }
     }
@@ -412,7 +412,7 @@ class TextToSpeech : ViewModel(), TextToSpeech.OnInitListener {
      */
     private fun updateStatus(message: String) {
         _state.value = _state.value.copy(statusMessage = message)
-        Log.d("TTS", message)
+        DebugLogger.debugLog("TTS", message)
     }
 
     /**

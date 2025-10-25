@@ -1,6 +1,5 @@
 package com.ragnar.eduapp.ui.screens.sign_up
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,7 +44,7 @@ import com.ragnar.eduapp.ui.theme.TextOnPrimary
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary
 import com.ragnar.eduapp.ui.theme.White
-import com.ragnar.eduapp.ui.theme.textFieldBackgroundColor
+import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -164,7 +163,7 @@ fun StudentLevelAssessmentScreen(navController: NavController) {
                 // Submit Button
                 Button(
                     onClick = {
-                        Log.d("StudentLevelAssessmentScreen", "Class: $selectedClass \n Learning Pace: $selectedPace")
+                        DebugLogger.debugLog("StudentLevelAssessmentScreen", "Class: $selectedClass \n Learning Pace: $selectedPace")
                         SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_PACE, selectedPace)
                         SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_CLASS, selectedClass)
 

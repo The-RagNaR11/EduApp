@@ -14,6 +14,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
+import com.ragnar.eduapp.utils.DebugLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,7 +52,7 @@ class SpeechToText: ViewModel() {
 
         this.context = context
 
-        Log.d(TAG, "Initializing Speech to Text Engine....")
+        DebugLogger.debugLog(TAG, "Initializing Speech to Text Engine....")
         val hasPermission = checkAudioPermission()
         _state.value = _state.value.copy(hasPermission = hasPermission)
 
@@ -122,13 +123,13 @@ class SpeechToText: ViewModel() {
                 isSpeaking = true,
                 statusMessage = "Listening...."
             )
-            Log.d(TAG, "Listening..........")
+            DebugLogger.debugLog(TAG, "Listening..........")
 
         } catch (e: Exception){
             _state.value = _state.value.copy(
                 statusMessage = "Error Starting speech recognizer....."
             )
-            Log.e(TAG, "Error Starting speech recognizer", e)
+            DebugLogger.errorLog(TAG, "Error Starting speech recognizer $e")
         }
     }
 
@@ -140,14 +141,14 @@ class SpeechToText: ViewModel() {
             isSpeaking = false,
             statusMessage = "Listening stopped"
         )
-        Log.d(TAG, "Stopped Listening...")
+        DebugLogger.debugLog(TAG, "Stopped Listening...")
     }
 
     fun setLanguage(language: String) {
         _state.value = _state.value.copy(
             selectedLanguage = language
         )
-        Log.d(TAG, "Selected language : $language")
+        DebugLogger.debugLog(TAG, "Selected language : $language")
     }
 
     private val speechRecognitionListener = object : RecognitionListener {
@@ -184,7 +185,7 @@ class SpeechToText: ViewModel() {
                 isSpeaking = false,
                 statusMessage = errorMessage
             )
-            Log.e(TAG, errorMessage)
+            DebugLogger.errorLog(TAG, errorMessage)
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
         }
 
@@ -214,7 +215,7 @@ class SpeechToText: ViewModel() {
                     statusMessage = "Speech recognized successfully!",
                     resultText = matches[0]
                 )
-                Log.d(TAG, matches[0])
+                DebugLogger.debugLog(TAG, matches[0])
             }
         }
 

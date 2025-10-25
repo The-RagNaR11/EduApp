@@ -1,9 +1,7 @@
 package com.ragnar.eduapp.ui.screens.sign_up
 
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,10 +25,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.sourceInformationMarkerEnd
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -43,12 +39,11 @@ import com.ragnar.eduapp.core.GoogleSignIn
 import com.ragnar.eduapp.ui.components.SignUpPageFooterModel
 import com.ragnar.eduapp.ui.theme.BackgroundPrimary
 import com.ragnar.eduapp.ui.theme.BackgroundSecondary
-import com.ragnar.eduapp.ui.theme.ChipBackground
 import com.ragnar.eduapp.ui.theme.ColorHint
-import com.ragnar.eduapp.ui.theme.SendButtonColor
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary
 import com.ragnar.eduapp.ui.theme.White
+import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
 
 @Composable
@@ -146,7 +141,7 @@ fun GoogleSignInScreen(navController: NavController) {
                             .height(50.dp)
                             .padding(horizontal = 50.dp),
                         onClick = {
-                            Log.i("SignUpScreen", "Google Sign In Button Clicked")
+                            DebugLogger.debugLog("SignUpScreen", "Google Sign In Button Clicked")
 
                             GoogleSignIn.doGoogleSignIn(
                                 context = context,

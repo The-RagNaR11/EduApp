@@ -1,7 +1,7 @@
 package com.ragnar.eduapp.core.chatBot
 
 import android.util.Log
-import com.ragnar.eduapp.utils.SharedPreferenceUtils
+import com.ragnar.eduapp.utils.DebugLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -128,8 +128,8 @@ class GroqLLMClient(
                 put("max_tokens", 1024)
             }
 
-            Log.d("AIChatUtils", "Sending request to: $url")
-            Log.d("AIChatUtils", "Request body: $jsonBody")
+            DebugLogger.debugLog("AIChatUtils", "Sending request to: $url")
+            DebugLogger.debugLog("AIChatUtils", "Request body: $jsonBody")
 
             val requestBody = jsonBody.toString()
                 .toRequestBody("application/json; charset=utf-8".toMediaType())
@@ -143,12 +143,12 @@ class GroqLLMClient(
 
             val response = client.newCall(request).execute()
 
-            Log.d("AIChatUtils", "Response code: ${response.code}")
+            DebugLogger.debugLog("AIChatUtils", "Response code: ${response.code}")
 
             if (!response.isSuccessful) {
                 val errorBody = response.body?.string() ?: "Unknown error"
-                Log.e("AIChatUtils", "Error: ${response.code} - ${response.message}")
-                Log.e("AIChatUtils", "Error body: $errorBody")
+                DebugLogger.errorLog("AIChatUtils", "Error: ${response.code} - ${response.message}")
+                DebugLogger.errorLog("AIChatUtils", "Error body: $errorBody")
                 response.close()
                 return@withContext "Error: ${response.code} - ${response.message}"
             }
@@ -157,11 +157,11 @@ class GroqLLMClient(
             val responseBody = response.body?.string() ?: ""
             response.close()
 
-            Log.d("AIChatUtils", "Response body: $responseBody")
+            DebugLogger.debugLog("AIChatUtils", "Response body: $responseBody")
             return@withContext responseBody
 
         } catch (e: Exception) {
-            Log.e("AIChatUtils", "Exception during API call: ${e.message}", e)
+            DebugLogger.errorLog("AIChatUtils", "Exception during API call: ${e.message}")
             return@withContext "Error: ${e.message}"
         }
     }
@@ -179,7 +179,7 @@ class GroqLLMClient(
                 val message = choices.getJSONObject(0).getJSONObject("message")
                 val content = message.getString("content")
 
-                Log.d("AIChatUtils", "Extracting concept map from content of length: ${content.length}")
+                DebugLogger.debugLog("AIChatUtils", "Extracting concept map from content of length: ${content.length}")
 
                 // Look for any JSON object that contains "visualization_type": "Concept Map"
                 var currentPos = 0
@@ -217,7 +217,7 @@ class GroqLLMClient(
                                 testObj.has("nodes") &&
                                 testObj.has("edges")) {
 
-                                Log.d("AIChatUtils", "Successfully extracted concept map JSON: $candidateJson")
+                                DebugLogger.debugLog("AIChatUtils", "Successfully extracted concept map JSON: $candidateJson")
 
                                 // Post-process: Add edge IDs if missing
                                 val processedJson = addEdgeIdsIfMissing(candidateJson)
@@ -226,7 +226,7 @@ class GroqLLMClient(
                             }
                         } catch (e: Exception) {
                             // Not a valid JSON or not a concept map, continue searching
-                            Log.e("GroqLLMClient", "Not a valid JSON or not a concept map, continue searching: ${e.message}")
+                            DebugLogger.errorLog("GroqLLMClient", "Not a valid JSON or not a concept map, continue searching: ${e.message}")
                         }
                     }
 
@@ -234,11 +234,11 @@ class GroqLLMClient(
                 }
             }
 
-            Log.e("AIChatUtils", "Could not extract concept map JSON from response")
+            DebugLogger.errorLog("AIChatUtils", "Could not extract concept map JSON from response")
             return getDefaultConceptMapJSON()
 
         } catch (e: Exception) {
-            Log.e("AIChatUtils", "Error extracting concept map JSON: ${e.message}", e)
+            DebugLogger.errorLog("AIChatUtils", "Error extracting concept map JSON: ${e.message}")
             return getDefaultConceptMapJSON()
         }
     }
@@ -267,13 +267,13 @@ class GroqLLMClient(
             }
 
             if (modified) {
-                Log.d("AIChatUtils", "Added missing edge IDs")
+                DebugLogger.debugLog("AIChatUtils", "Added missing edge IDs")
             }
 
             return jsonObject.toString()
 
         } catch (e: Exception) {
-            Log.e("AIChatUtils", "Error adding edge IDs: ${e.message}")
+            DebugLogger.errorLog("AIChatUtils", "Error adding edge IDs: ${e.message}")
             return jsonString // Return original if processing fails
         }
     }
@@ -349,7 +349,7 @@ class GroqLLMClient(
             return "I encountered an error processing the response."
 
         } catch (e: Exception) {
-            Log.e("AIChatUtils", "Error extracting answer: ${e.message}", e)
+            DebugLogger.errorLog("AIChatUtils", "Error extracting answer: ${e.message}")
             return "I encountered an error processing the response."
         }
     }

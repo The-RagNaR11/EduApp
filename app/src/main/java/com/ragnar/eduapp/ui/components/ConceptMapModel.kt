@@ -50,6 +50,7 @@ import com.ragnar.eduapp.ui.theme.BackgroundPrimary
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary
 import com.ragnar.eduapp.ui.theme.textFieldBackgroundColor
+import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.GraphUtils
 import kotlinx.serialization.json.Json
 import kotlin.math.hypot
@@ -89,7 +90,7 @@ fun ConceptMapModel(
      */
     val graphData = remember(json) {
         try {
-            Log.d(TAG, "Raw JSON received: $json")
+            DebugLogger.debugLog(TAG, "Raw JSON received: $json")
             val parsedData = Json.decodeFromString<GraphData>(json)
             
             // Compute startTime and endTime for audio segments if not provided
@@ -105,21 +106,21 @@ fun ConceptMapModel(
             
             val processedData = parsedData.copy(audioSegments = processedAudioSegments)
             
-            Log.d(TAG, "Successfully parsed GraphData:")
-            Log.d(TAG, "  - Main concept: ${processedData.main_concept}")
-            Log.d(TAG, "  - Nodes count: ${processedData.nodes.size}")
-            Log.d(TAG, "  - Edges count: ${processedData.edges.size}")
-            Log.d(TAG, "  - Audio segments count: ${processedData.audioSegments.size}")
+            DebugLogger.debugLog(TAG, "Successfully parsed GraphData:")
+            DebugLogger.debugLog(TAG, "  - Main concept: ${processedData.main_concept}")
+            DebugLogger.debugLog(TAG, "  - Nodes count: ${processedData.nodes.size}")
+            DebugLogger.debugLog(TAG, "  - Edges count: ${processedData.edges.size}")
+            DebugLogger.debugLog(TAG, "  - Audio segments count: ${processedData.audioSegments.size}")
             
             // Log computed audio segment times
             processedData.audioSegments.forEachIndexed { index, segment ->
-                Log.d(TAG, "  - Segment $index: ${segment.startTime}s-${segment.endTime}s (${segment.estimatedDuration}s)")
+                DebugLogger.debugLog(TAG, "  - Segment $index: ${segment.startTime}s-${segment.endTime}s (${segment.estimatedDuration}s)")
             }
             
             processedData
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing JSON: $e")
-            Log.e(TAG, "JSON content: $json")
+            DebugLogger.errorLog(TAG, "Error parsing JSON: $e")
+            DebugLogger.errorLog(TAG, "JSON content: $json")
             graphUtils.createDefaultGraphData()
         }
     }
@@ -223,7 +224,7 @@ fun ConceptMapModel(
      *
      * Logic: Tstart <= currentTime <= Tend
      */
-    val currentSegment = remember(currentAudioTime, graphData.audioSegments) {
+    val currentSegment = remember(currentAudioTime.toInt(), graphData.audioSegments) {
         if (isAudioPlaying && currentAudioTime > 0f) {
             graphData.audioSegments.find { segment ->
                 currentAudioTime >= segment.startTime &&
@@ -283,7 +284,7 @@ fun ConceptMapModel(
      */
     LaunchedEffect(currentSegment) {
         currentSegment?.let { segment ->
-            Log.d(TAG, """
+            DebugLogger.debugLog(TAG, """
                 ════════════════════════════════════════════════════════
                 AUDIO SYNC - Segment Active
                 ════════════════════════════════════════════════════════
@@ -297,7 +298,7 @@ fun ConceptMapModel(
                 ════════════════════════════════════════════════════════
             """.trimIndent())
         } ?: run {
-            Log.d(TAG, "No active audio segment at time ${currentAudioTime}s")
+            DebugLogger.debugLog(TAG, "No active audio segment at time ${currentAudioTime}s")
         }
     }
     
@@ -305,9 +306,9 @@ fun ConceptMapModel(
      * Log audio segments data for debugging
      */
     LaunchedEffect(graphData.audioSegments) {
-        Log.d(TAG, "Audio segments loaded: ${graphData.audioSegments.size} segments")
+        DebugLogger.debugLog(TAG, "Audio segments loaded: ${graphData.audioSegments.size} segments")
         graphData.audioSegments.forEachIndexed { index, segment ->
-            Log.d(TAG, "Segment $index: ${segment.startTime}s-${segment.endTime}s, action: ${segment.action}")
+            DebugLogger.debugLog(TAG, "Segment $index: ${segment.startTime}s-${segment.endTime}s, action: ${segment.action}")
         }
     }
 
@@ -647,7 +648,7 @@ fun ConceptMapModel(
             FloatingActionButton(
                 onClick = {
                     scale = (scale * 1.25f).coerceIn(0.25f, 4f)
-                    Log.d(TAG, "Zoom In: scale = $scale")
+                    DebugLogger.debugLog(TAG, "Zoom In: scale = $scale")
                 },
                 modifier = Modifier.size(37.dp),
                 shape = RectangleShape,
@@ -667,7 +668,7 @@ fun ConceptMapModel(
             FloatingActionButton(
                 onClick = {
                     scale = (scale / 1.25f).coerceIn(0.25f, 4f)
-                    Log.d(TAG, "Zoom Out: scale = $scale")
+                    DebugLogger.debugLog(TAG, "Zoom Out: scale = $scale")
                 },
                 modifier = Modifier.size(37.dp),
                 shape = RectangleShape,

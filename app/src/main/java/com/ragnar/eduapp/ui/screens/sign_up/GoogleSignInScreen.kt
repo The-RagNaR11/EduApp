@@ -1,5 +1,6 @@
 package com.ragnar.eduapp.ui.screens.sign_up
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -36,7 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.core.GoogleSignIn
+import com.ragnar.eduapp.data.dataClass.User
 import com.ragnar.eduapp.data.repository.DBHelper
+import com.ragnar.eduapp.data.repository.LocalDataRepository
 import com.ragnar.eduapp.ui.components.SignUpPageFooterModel
 import com.ragnar.eduapp.ui.theme.BackgroundPrimary
 import com.ragnar.eduapp.ui.theme.BackgroundSecondary
@@ -52,9 +55,6 @@ fun GoogleSignInScreen(navController: NavController) {
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-    val db : DBHelper = DBHelper(context)
-
     /**
      * Using rememberLauncherForActivityResult to keep the launcher alive and stable
      * Even if there is an UI update
@@ -151,30 +151,42 @@ fun GoogleSignInScreen(navController: NavController) {
                                 scope = scope,
                                 launcher = launcher,
                                 onLoginSuccess = { userInfo ->
-                                    SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_ID, userInfo.id)
-                                    SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_EMAIL, userInfo.email)
-                                    SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_DISPLAY_NAME, userInfo.displayName)
-                                    SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_PROFILE_PIC, userInfo.profilePictureUri)
 
-                                    db.addUser()
+                                    // stores the user data inside database for later use
+                                    val result = LocalDataRepository.addUser(
+                                        name = userInfo.displayName.toString(),
+                                        email = userInfo.email,
+                                        profilePicUrl =  userInfo.profilePictureUri.toString(),
+                                        userId = userInfo.id,
+                                        language = SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_LANGUAGE).toString()
+                                    )
 
-                                    val phoneNumber = SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_PHONE_NUMBER)
 
-                                    if (SharedPreferenceUtils.isUserLoggedIn(context)) {
-                                        if (phoneNumber.isNullOrEmpty()) {
-                                            // If phone number is empty → go to user detail entry
-                                            navController.navigate("userDetailEntry") {
-                                                popUpTo(0) { inclusive = true }
-                                            }
-                                        } else {
-                                            // If phone number exists → go to study session setup
-                                            navController.navigate("studySessionSetup") {
-                                                popUpTo(0) { inclusive = true }
+                                    if (result) {
+                                        DebugLogger.debugLog("GoogleSignInScreen", "User added successfully")
+                                        Toast.makeText(context, "Sign in successful", Toast.LENGTH_SHORT).show()
+
+                                        val activeUser : User? = LocalDataRepository.getActiveUser() // retrieve the current user
+                                        DebugLogger.debugLog("GoogleSignInScreen" ," Current USER: \n $activeUser")
+                                        val phoneNumber = activeUser?.phone ?: ""
+
+                                        if (activeUser?.isActive == 1) {
+                                            if (phoneNumber.isEmpty()) {
+                                                // If phone number is empty → go to user detail entry
+                                                navController.navigate("userDetailEntry") {
+                                                    popUpTo(0) { inclusive = true }
+                                                }
+                                            } else {
+                                                // If phone number exists → go to study session setup
+                                                navController.navigate("studySessionSetup") {
+                                                    popUpTo(0) { inclusive = true }
+                                                }
                                             }
                                         }
+                                    }else {
+                                        DebugLogger.errorLog("GoogleSignInScreen", "Failed to add user")
+                                        Toast.makeText(context, "Failed to sign please try again", Toast.LENGTH_SHORT).show()
                                     }
-
-
                                 }
                             )
                         },

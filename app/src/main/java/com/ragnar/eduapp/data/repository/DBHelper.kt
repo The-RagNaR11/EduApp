@@ -50,7 +50,7 @@ class DBHelper(context: Context) :
         val createUserTable = """
             CREATE TABLE $TABLE_USER (
                 $ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                $USER_ID TEXT NOT NULL,
+                $USER_ID TEXT UNIQUE NOT NULL,
                 $USER_NAME TEXT NOT NULL,
                 $USER_EMAIL TEXT UNIQUE NOT NULL,
                 $USER_LANGUAGE TEXT,
@@ -94,20 +94,54 @@ class DBHelper(context: Context) :
 
     /**
      * Adds a new user or activates an existing one.
+     * if user already exists then it will just update the fields
      * Deactivates all previous users before inserting the new one.
      */
-    fun addUser(name: String, email: String, profilePicUrl: String, userId: String): Long {
+    fun addUser(
+        name: String,
+        email: String,
+        profilePicUrl: String,
+        userId: String,
+        language: String
+    ): Long {
         val db = writableDatabase
+
+        // Deactivate all users
         db.execSQL("UPDATE $TABLE_USER SET $IS_ACTIVE = 0")
+
+        // Prepare values for insert or update
         val values = ContentValues().apply {
-            put(USER_ID, userId)
             put(USER_NAME, name)
             put(USER_EMAIL, email)
             put(USER_PROFILE_PIC_URL, profilePicUrl)
+            put(USER_LANGUAGE, language)
             put(IS_ACTIVE, 1)
         }
-        return db.insert(TABLE_USER, null, values)
+
+        // Check if user already exists by userId or email
+        val cursor = db.rawQuery(
+            "SELECT $USER_ID FROM $TABLE_USER WHERE $USER_ID = ? OR $USER_EMAIL = ?",
+            arrayOf(userId, email)
+        )
+
+        val rowId: Long = if (cursor.moveToFirst()) {
+            // Update existing user
+            db.update(
+                TABLE_USER,
+                values,
+                "$USER_ID = ? OR $USER_EMAIL = ?",
+                arrayOf(userId, email)
+            ).toLong()
+        } else {
+            // ✅ Insert new user
+            values.put(USER_ID, userId)
+            db.insert(TABLE_USER, null, values)
+        }
+
+        cursor.close()
+        return rowId
     }
+
 
     /**
      * Retrieves a user record by their email.

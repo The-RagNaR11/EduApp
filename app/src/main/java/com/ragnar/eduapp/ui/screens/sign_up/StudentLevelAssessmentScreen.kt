@@ -1,5 +1,6 @@
 package com.ragnar.eduapp.ui.screens.sign_up
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ragnar.eduapp.R
+import com.ragnar.eduapp.data.repository.LocalDataRepository
 import com.ragnar.eduapp.ui.components.DropDownMenuModel
 import com.ragnar.eduapp.ui.theme.BackgroundPrimary
 import com.ragnar.eduapp.ui.theme.BrandPrimary
@@ -164,11 +166,18 @@ fun StudentLevelAssessmentScreen(navController: NavController) {
                 Button(
                     onClick = {
                         DebugLogger.debugLog("StudentLevelAssessmentScreen", "Class: $selectedClass \n Learning Pace: $selectedPace")
-                        SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_PACE, selectedPace)
-                        SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_CLASS, selectedClass)
 
-                        navController.navigate("studySessionSetUp") {
-                            popUpTo(0) {inclusive = true}
+                        val paceResult = LocalDataRepository.updateUserDetail("pace", selectedPace)
+                        val classResult = LocalDataRepository.updateUserDetail("class", selectedClass)
+
+                        if (paceResult && classResult) {
+                            DebugLogger.debugLog("StudentLevelAssessmentScreen", "User detail updated successfully")
+                            navController.navigate("studySessionSetUp") {
+                                popUpTo(0) {inclusive = true}
+                            }
+                        } else {
+                            DebugLogger.errorLog("StudentLevelAssessmentScreen", "Failed to update user detail")
+                            Toast.makeText(context, "Failed to update user detail", Toast.LENGTH_LONG).show()
                         }
                     },
                     enabled = selectedClass.isNotEmpty() && selectedPace.isNotEmpty(),

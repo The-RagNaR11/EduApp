@@ -155,6 +155,7 @@ fun LanguageSelectionScreen(navController: NavController) {
                     onClick = {
                         selectedLanguage = language
                         DebugLogger.debugLog("LanguageSelectionScreen", "Selected Language: $selectedLanguage")
+
                     }
                 )
                 Spacer(modifier = Modifier.height(10.dp))

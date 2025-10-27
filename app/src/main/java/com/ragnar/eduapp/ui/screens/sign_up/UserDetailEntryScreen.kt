@@ -2,6 +2,7 @@ package com.ragnar.eduapp.ui.screens.sign_up
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -57,6 +58,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.core.GoogleSignIn
+import com.ragnar.eduapp.data.dataClass.User
+import com.ragnar.eduapp.data.repository.LocalDataRepository
 import com.ragnar.eduapp.ui.components.SignUpPageFooterModel
 import com.ragnar.eduapp.ui.theme.AccentBlue
 import com.ragnar.eduapp.ui.theme.AiMessageBackground
@@ -64,6 +67,7 @@ import com.ragnar.eduapp.ui.theme.BackgroundPrimary
 import com.ragnar.eduapp.ui.theme.BackgroundSecondary
 import com.ragnar.eduapp.ui.theme.Black
 import com.ragnar.eduapp.ui.theme.ChipBackground
+import com.ragnar.eduapp.ui.theme.ColorError
 import com.ragnar.eduapp.ui.theme.ColorHint
 import com.ragnar.eduapp.ui.theme.TextOnPrimary
 import com.ragnar.eduapp.ui.theme.TextPrimary
@@ -78,14 +82,15 @@ fun UserDetailEntryScreen(navController: NavController) {
     val context: Context = LocalContext.current
 
     //  getting full name from already google login which is stored in shared preference
-    val fullName: String = SharedPreferenceUtils
-        .getUserInfo(context, SharedPreferenceUtils.KEY_DISPLAY_NAME)
-        .toString()
+    val activeUser: User? = LocalDataRepository.getActiveUser()
 
-
+    var fullName by remember { mutableStateOf(activeUser?.name ?: "") }
     var phoneNumber by remember { mutableStateOf("") }
-    var ambitionText by remember { mutableStateOf("") }
+    var ambitionText by remember { mutableStateOf(" ") }
     var schoolName by remember { mutableStateOf("") }
+
+    var phoneError by remember { mutableStateOf<String?>(null) }
+    var schoolError by remember { mutableStateOf<String?>(null) }
 
     Surface(
         modifier = Modifier
@@ -188,6 +193,13 @@ fun UserDetailEntryScreen(navController: NavController) {
                         value = phoneNumber,
                         onValueChange = {
                             phoneNumber = it
+                            // Dynamic validation logic
+                            phoneError = when {
+                                phoneNumber.isBlank() -> "Phone number cannot be empty"
+                                phoneNumber.matches(Regex("^[0-5]")) -> "Phone number should start from 6 to 9"
+                                !phoneNumber.matches(Regex("^(?:\\+91|91)?[6-9]\\d{9}$")) -> "Enter a valid 10-digit number"
+                                else -> null
+                            }
                         },
                         label = { Text(stringResource(R.string.phone_number_label)) },
                         modifier = Modifier
@@ -198,6 +210,16 @@ fun UserDetailEntryScreen(navController: NavController) {
                                 imageVector = Icons.Default.Phone,
                                 contentDescription = "Email Icon"
                             )
+                        },
+                        isError = phoneError != null,
+                        supportingText = {
+                            if (phoneError != null) {
+                                Text(
+                                    text = phoneError!!,
+                                    color = ColorError,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Phone
@@ -212,7 +234,8 @@ fun UserDetailEntryScreen(navController: NavController) {
                             focusedBorderColor = AccentBlue,
                             unfocusedContainerColor = ChipBackground,
                             focusedLeadingIconColor = TextSecondary,
-                            unfocusedLeadingIconColor = ColorHint
+                            unfocusedLeadingIconColor = ColorHint,
+                            errorTextColor = ColorError
                         )
                     )
                     Spacer(modifier = Modifier.padding(5.dp))
@@ -245,7 +268,8 @@ fun UserDetailEntryScreen(navController: NavController) {
                             focusedBorderColor = AccentBlue,
                             unfocusedContainerColor = ChipBackground,
                             focusedLeadingIconColor = TextSecondary,
-                            unfocusedLeadingIconColor = ColorHint
+                            unfocusedLeadingIconColor = ColorHint,
+                            errorTextColor = ColorError
                         )
                     )
                     Spacer(modifier = Modifier.padding(5.dp))
@@ -258,6 +282,13 @@ fun UserDetailEntryScreen(navController: NavController) {
                         value = schoolName,
                         onValueChange = {
                             schoolName = it
+                            // Dynamic validation logic
+                            schoolError = when {
+                                schoolName.isBlank() -> "School name can not be empty"
+                                schoolName.length < 3 -> "School name must be at least 3 characters"
+                                !schoolName.matches(Regex("^[a-zA-Z0-9 .,'-]{3,}$")) -> "School name should only contain alphabet"
+                                else -> null
+                            }
                         },
                         label = { Text(stringResource(R.string.school_name_label)) },
                         modifier = Modifier
@@ -269,6 +300,16 @@ fun UserDetailEntryScreen(navController: NavController) {
                                 contentDescription = "School Icon"
                             )
                         },
+                        isError = schoolError != null,
+                        supportingText = {
+                            if (schoolError != null) {
+                                Text(
+                                    text = schoolError!!,
+                                    color = ColorError,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedPlaceholderColor = ColorHint,
                             unfocusedPlaceholderColor = Black,
@@ -279,7 +320,8 @@ fun UserDetailEntryScreen(navController: NavController) {
                             focusedBorderColor = AccentBlue,
                             unfocusedContainerColor = ChipBackground,
                             focusedLeadingIconColor = TextSecondary,
-                            unfocusedLeadingIconColor = ColorHint
+                            unfocusedLeadingIconColor = ColorHint,
+                            errorTextColor = ColorError
                         )
                     )
                     Spacer(modifier = Modifier.padding(15.dp))
@@ -291,20 +333,36 @@ fun UserDetailEntryScreen(navController: NavController) {
                             .height(50.dp)
                             .padding(horizontal = 20.dp),
 
-                        //  the button is only enabled if phoneNumber and schoolname is filled
+                        //  the button is only enabled if phoneNumber and schoolName is filled
                         // Which makes the Name, Phone Number, and School Name as required and ambition as optional
-                        enabled = phoneNumber.isNotBlank() && schoolName.isNotBlank(),
+                        enabled = phoneError == null && schoolError == null,
                         onClick = {
-                            DebugLogger.debugLog("SignUpScreen", "Get Started Button Clicked")
-                            SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_PHONE_NUMBER, phoneNumber)
-                            SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_SCHOOL_NAME, schoolName)
-                            SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_AMBITION, ambitionText)
+                            DebugLogger.debugLog("UserDetailEntryScreen", "Get Started Button Clicked")
+                            DebugLogger.debugLog(
+                                "UserDetailEntryScreen", """
+                                    ******* User Detail from UserDetail Screen**********
+                                    Name: $fullName
+                                    Phone number: $phoneNumber
+                                    School: $schoolName
+                                    Ambition: $ambitionText
+                                    ****************************************************
+                                    """.trimIndent()
+                            )
 
-                            navController.navigate("studentLevelAssessment") {
-                                popUpTo(0) { inclusive = true } // remove back stack of the screen
-                                // on back press it will close the screen
+                            val phoneResult: Boolean = LocalDataRepository.updateUserDetail("phone", phoneNumber.trim())
+                            val schoolResult: Boolean = LocalDataRepository.updateUserDetail("school", schoolName.trim())
+                            val ambitionResult: Boolean =LocalDataRepository.updateUserDetail("ambition", ambitionText.trim())
+
+                            if (phoneResult && schoolResult && ambitionResult) {
+                                DebugLogger.debugLog("UserDetailEntryScreen", "User data update successfully")
+                                navController.navigate("studentLevelAssessment") {
+                                    popUpTo(0) { inclusive = true } // remove back stack of the screen
+                                    // on back press it will close the screen
+                                }
+                            } else {
+                                DebugLogger.errorLog("UserDetailEntryScreen", "Failed to update user detail")
+                                Toast.makeText(context, "Failed to update user detail", Toast.LENGTH_LONG).show()
                             }
-
                         },
                     ) {
                         Row(

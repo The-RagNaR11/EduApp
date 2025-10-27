@@ -3,6 +3,7 @@ package com.ragnar.eduapp.data.repository
 import android.content.Context
 import com.ragnar.eduapp.data.dataClass.ChatMessageModel
 import com.ragnar.eduapp.data.dataClass.User
+import org.intellij.lang.annotations.Language
 import org.json.JSONArray
 
 /**
@@ -27,6 +28,13 @@ object LocalDataRepository {
     //  USER METHODS
     // -------------------------------------------------
 
+    /**
+     * a wrapper around add user method of DBHelper class
+     * return if adding user was successful or not
+     */
+    fun addUser(name: String, email: String, profilePicUrl: String, userId: String, language: String): Boolean {
+        return dbHelper.addUser(name, email, profilePicUrl, userId, language) != -1L
+    }
     /**
      * Fetches the currently active user and returns it as a [User] object.
      */

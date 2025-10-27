@@ -17,7 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.ragnar.eduapp.data.model.ChatMessageModel
+import com.ragnar.eduapp.data.dataClass.ChatMessageModel
 import com.ragnar.eduapp.ui.theme.BrandPrimary
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary

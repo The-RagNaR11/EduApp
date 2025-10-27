@@ -5,11 +5,10 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import com.ragnar.eduapp.data.model.ChatMessageModel
 
 /**
- * Handles all local database operations for EduApp.
- * Stores user data and AI chat history in two tables: users and chats.
+ * Handles all local SQLite database operations for EduApp.
+ * Stores user profiles and AI chat history in two tables: users and chats.
  */
 class DBHelper(context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
@@ -23,20 +22,21 @@ class DBHelper(context: Context) :
         const val TABLE_CHAT = "chats"
 
         // User columns
-        const val USER_ID = "id" // string
-        const val USER_NAME = "name" // string
-        const val USER_EMAIL = "email" // string
-        const val USER_LANGUAGE = "language" // string
-        const val USER_PROFILE_PIC_URL = "profile_pic_url" // string (URL)
-        const val USER_PHONE_NUMBER = "phone" // number
-        const val USER_SCHOOL = "school" // string
-        const val USER_AMBITION = "ambition" // string
-        const val USER_CLASS = "class" // number
-        const val USER_PACE = "pace" // string (FAST/ MEDIUM/ SLOW)
-        const val USER_CHAPTER_LIST = "chapter_list" // arraylist (stored as JSON or CSV)
-        const val USER_SUBJECT = "subject" // string
-        const val USER_SYLLABUS = "syllabus" // string (NCERT, CBSE, etc)
-        const val IS_ACTIVE = "is_active" // 1 = current active user
+        const val ID = "id"
+        const val USER_ID = "user_id"
+        const val USER_NAME = "name"
+        const val USER_EMAIL = "email"
+        const val USER_LANGUAGE = "language"
+        const val USER_PROFILE_PIC_URL = "profile_pic_url"
+        const val USER_PHONE_NUMBER = "phone"
+        const val USER_SCHOOL = "school"
+        const val USER_AMBITION = "ambition"
+        const val USER_CLASS = "class"
+        const val USER_PACE = "pace"
+        const val USER_CHAPTER_LIST = "chapter_list"
+        const val USER_SUBJECT = "subject"
+        const val USER_SYLLABUS = "syllabus"
+        const val IS_ACTIVE = "is_active"
 
         // Chat columns
         const val CHAT_ID = "id"
@@ -49,7 +49,8 @@ class DBHelper(context: Context) :
     override fun onCreate(db: SQLiteDatabase) {
         val createUserTable = """
             CREATE TABLE $TABLE_USER (
-                $USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $USER_ID TEXT NOT NULL,
                 $USER_NAME TEXT NOT NULL,
                 $USER_EMAIL TEXT UNIQUE NOT NULL,
                 $USER_LANGUAGE TEXT,
@@ -69,7 +70,7 @@ class DBHelper(context: Context) :
         val createChatTable = """
             CREATE TABLE $TABLE_CHAT (
                 $CHAT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                $CHAT_USER_ID INTEGER NOT NULL,
+                $CHAT_USER_ID TEXT NOT NULL,
                 $CHAT_USER_MESSAGE TEXT,
                 $CHAT_AI_RESPONSE TEXT,
                 $CHAT_TIMESTAMP INTEGER DEFAULT (strftime('%s','now')),
@@ -88,50 +89,76 @@ class DBHelper(context: Context) :
     }
 
     // ------------------------
-    //  User Helper Methods
+    //  USER METHODS
     // ------------------------
 
     /**
-     * Add or activate a user.
-     * If adding new, it sets the user as active and deactivates all previous ones.
+     * Adds a new user or activates an existing one.
+     * Deactivates all previous users before inserting the new one.
      */
-    fun addUser(name: String, email: String): Long {
+    fun addUser(name: String, email: String, profilePicUrl: String, userId: String): Long {
         val db = writableDatabase
-        db.execSQL("UPDATE $TABLE_USER SET $IS_ACTIVE = 0") // deactivate old users
-
+        db.execSQL("UPDATE $TABLE_USER SET $IS_ACTIVE = 0")
         val values = ContentValues().apply {
+            put(USER_ID, userId)
             put(USER_NAME, name)
             put(USER_EMAIL, email)
+            put(USER_PROFILE_PIC_URL, profilePicUrl)
             put(IS_ACTIVE, 1)
         }
         return db.insert(TABLE_USER, null, values)
     }
 
+    /**
+     * Retrieves a user record by their email.
+     */
     fun getUserByEmail(email: String): Cursor {
         val db = readableDatabase
         return db.rawQuery("SELECT * FROM $TABLE_USER WHERE $USER_EMAIL = ?", arrayOf(email))
     }
 
+    /**
+     * Fetches all stored users.
+     */
     fun getAllUsers(): Cursor {
         val db = readableDatabase
         return db.rawQuery("SELECT * FROM $TABLE_USER", null)
     }
 
+    /**
+     * Fetches the currently active user (if any).
+     */
     fun getActiveUser(): Cursor {
         val db = readableDatabase
         return db.rawQuery("SELECT * FROM $TABLE_USER WHERE $IS_ACTIVE = 1 LIMIT 1", null)
     }
 
+    /**
+     * Deletes a user from the database by email.
+     */
     fun deleteUser(email: String): Int {
         val db = writableDatabase
         return db.delete(TABLE_USER, "$USER_EMAIL = ?", arrayOf(email))
     }
 
+    /**
+     * Updates a single user field (key-value) for the active user.
+     * Example: updateUserDetail("school", "New School Name")
+     */
+    fun updateUserDetail(key: String, value: String): Int {
+        val db = writableDatabase
+        val values = ContentValues().apply { put(key, value) }
+        return db.update(TABLE_USER, values, "$IS_ACTIVE = 1", null)
+    }
+
     // ------------------------
-    //  Chat Helper Methods
+    //  CHAT METHODS
     // ------------------------
 
-    fun addChat(userId: Int, userMessage: String, aiResponse: String): Long {
+    /**
+     * Adds a chat record for the specified user ID.
+     */
+    fun addChat(userId: String, userMessage: String, aiResponse: String): Long {
         val db = writableDatabase
         val values = ContentValues().apply {
             put(CHAT_USER_ID, userId)
@@ -142,14 +169,14 @@ class DBHelper(context: Context) :
     }
 
     /**
-     * Add chat for currently active user.
+     * Adds a chat entry for the currently active user.
      */
     fun addChatForActiveUser(userMessage: String, aiResponse: String): Long {
         var result: Long = -1
         val db = readableDatabase
         db.rawQuery("SELECT $USER_ID FROM $TABLE_USER WHERE $IS_ACTIVE = 1 LIMIT 1", null).use { cursor ->
             if (cursor.moveToFirst()) {
-                val userId = cursor.getInt(cursor.getColumnIndexOrThrow(USER_ID))
+                val userId = cursor.getString(cursor.getColumnIndexOrThrow(USER_ID))
                 result = addChat(userId, userMessage, aiResponse)
             }
         }
@@ -157,84 +184,44 @@ class DBHelper(context: Context) :
     }
 
     /**
-     * Get all chats for a given user.
+     * Returns all chats for a specific user ID.
      */
-    fun getChatsByUserId(userId: Int): Cursor {
+    fun getChatsByUserId(userId: String): Cursor {
         val db = readableDatabase
         return db.rawQuery(
             "SELECT * FROM $TABLE_CHAT WHERE $CHAT_USER_ID = ? ORDER BY $CHAT_TIMESTAMP ASC",
-            arrayOf(userId.toString())
+            arrayOf(userId)
         )
     }
 
     /**
-     * Get all chats for currently active user.
+     * Returns all chats for the currently active user.
      */
     fun getChatsForActiveUser(): Cursor? {
         val db = readableDatabase
         var cursor: Cursor? = null
         db.rawQuery("SELECT $USER_ID FROM $TABLE_USER WHERE $IS_ACTIVE = 1 LIMIT 1", null).use { userCursor ->
             if (userCursor.moveToFirst()) {
-                val userId = userCursor.getInt(userCursor.getColumnIndexOrThrow(USER_ID))
+                val userId = userCursor.getString(userCursor.getColumnIndexOrThrow(USER_ID))
                 cursor = getChatsByUserId(userId)
             }
         }
         return cursor
     }
 
-    fun clearChatsForUser(userId: Int): Int {
+    /**
+     * Clears all chats for a specific user.
+     */
+    fun clearChatsForUser(userId: String): Int {
         val db = writableDatabase
-        return db.delete(TABLE_CHAT, "$CHAT_USER_ID = ?", arrayOf(userId.toString()))
+        return db.delete(TABLE_CHAT, "$CHAT_USER_ID = ?", arrayOf(userId))
     }
 
+    /**
+     * Deletes all chat records from the database.
+     */
     fun clearAllChats(): Int {
         val db = writableDatabase
         return db.delete(TABLE_CHAT, null, null)
     }
-    /**
-     * Returns all chats (for all users) as a list of ChatMessageModel objects.
-     */
-    fun getAllChatsAsModelList(): List<ChatMessageModel> {
-        val chatList = mutableListOf<ChatMessageModel>()
-        val db = readableDatabase
-        val cursor = db.rawQuery(
-            "SELECT $CHAT_USER_MESSAGE, $CHAT_AI_RESPONSE, $CHAT_TIMESTAMP FROM $TABLE_CHAT ORDER BY $CHAT_TIMESTAMP ASC",
-            null
-        )
-
-        cursor.use {
-            if (it.moveToFirst()) {
-                do {
-                    val userMessage = it.getString(it.getColumnIndexOrThrow(CHAT_USER_MESSAGE))
-                    val aiResponse = it.getString(it.getColumnIndexOrThrow(CHAT_AI_RESPONSE))
-                    val timestamp = it.getLong(it.getColumnIndexOrThrow(CHAT_TIMESTAMP))
-
-                    // Add user message if exists
-                    if (!userMessage.isNullOrEmpty()) {
-                        chatList.add(
-                            ChatMessageModel(
-                                sender = "user",
-                                content = userMessage,
-                                timestamp = timestamp
-                            )
-                        )
-                    }
-
-                    // Add AI response if exists
-                    if (!aiResponse.isNullOrEmpty()) {
-                        chatList.add(
-                            ChatMessageModel(
-                                sender = "ai",
-                                content = aiResponse,
-                                timestamp = timestamp
-                            )
-                        )
-                    }
-                } while (it.moveToNext())
-            }
-        }
-
-        return chatList
-    }
-
 }

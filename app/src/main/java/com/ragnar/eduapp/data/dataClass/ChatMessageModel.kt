@@ -1,4 +1,4 @@
-package com.ragnar.eduapp.data.model
+package com.ragnar.eduapp.data.dataClass
 
 import java.text.SimpleDateFormat
 import java.util.Date

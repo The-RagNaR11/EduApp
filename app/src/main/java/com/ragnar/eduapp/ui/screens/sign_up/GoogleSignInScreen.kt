@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.core.GoogleSignIn
+import com.ragnar.eduapp.data.repository.DBHelper
 import com.ragnar.eduapp.ui.components.SignUpPageFooterModel
 import com.ragnar.eduapp.ui.theme.BackgroundPrimary
 import com.ragnar.eduapp.ui.theme.BackgroundSecondary
@@ -51,6 +52,8 @@ fun GoogleSignInScreen(navController: NavController) {
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    val db : DBHelper = DBHelper(context)
 
     /**
      * Using rememberLauncherForActivityResult to keep the launcher alive and stable
@@ -152,6 +155,8 @@ fun GoogleSignInScreen(navController: NavController) {
                                     SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_EMAIL, userInfo.email)
                                     SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_DISPLAY_NAME, userInfo.displayName)
                                     SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_PROFILE_PIC, userInfo.profilePictureUri)
+
+                                    db.addUser()
 
                                     val phoneNumber = SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_PHONE_NUMBER)
 

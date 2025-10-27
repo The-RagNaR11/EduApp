@@ -47,14 +47,10 @@ class GoogleSignIn {
                         is CustomCredential -> {
                             if(result.credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
-                                val googleTokenId = googleIdTokenCredential.idToken
-
-//                                DebugLogger.debugLog("GoogleSignIn", "Google Token Id: $googleTokenId")
-//                                Toast.makeText(context, "Sign-in cancelled. Please try again.", Toast.LENGTH_SHORT).show()
-
 
                                 // Extract user information
                                 val userInfo : GoogleUserInfo = GoogleUserInfoExtractor.extractAndLogUserInfo(googleIdTokenCredential)
+
 
                                 // Call success callback with user info
                                 onLoginSuccess(userInfo)

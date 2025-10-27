@@ -2,7 +2,7 @@ package com.ragnar.eduapp.core.chatBot
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ragnar.eduapp.data.model.ChatMessageModel
+import com.ragnar.eduapp.data.dataClass.ChatMessageModel
 import com.ragnar.eduapp.utils.DebugLogger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

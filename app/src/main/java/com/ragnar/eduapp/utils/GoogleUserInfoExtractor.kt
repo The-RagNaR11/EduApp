@@ -1,7 +1,7 @@
 package com.ragnar.eduapp.utils
 
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.ragnar.eduapp.data.model.GoogleUserInfo
+import com.ragnar.eduapp.data.dataClass.GoogleUserInfo
 
 class GoogleUserInfoExtractor {
 

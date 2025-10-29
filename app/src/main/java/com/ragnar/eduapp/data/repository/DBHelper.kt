@@ -36,6 +36,7 @@ class DBHelper(context: Context) :
         const val USER_CHAPTER_LIST = "chapter_list"
         const val USER_SUBJECT = "subject"
         const val USER_SYLLABUS = "syllabus"
+        const val USER_LEARNING_INTENT = "learning_intent"
         const val IS_ACTIVE = "is_active"
 
         // Chat columns
@@ -63,6 +64,7 @@ class DBHelper(context: Context) :
                 $USER_CHAPTER_LIST TEXT,
                 $USER_SUBJECT TEXT,
                 $USER_SYLLABUS TEXT,
+                $USER_LEARNING_INTENT TEXT,
                 $IS_ACTIVE INTEGER DEFAULT 0
             )
         """.trimIndent()

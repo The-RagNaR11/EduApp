@@ -1,4 +1,4 @@
-package com.ragnar.ai_tutor.ui.components
+package com.ragnar.eduapp.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

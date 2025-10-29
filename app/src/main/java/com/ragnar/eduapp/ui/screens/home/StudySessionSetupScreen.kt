@@ -1,5 +1,6 @@
 package com.ragnar.eduapp.ui.screens.home
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,8 @@ import androidx.navigation.NavController
 import com.ragnar.eduapp.ui.components.DropDownMenuModel
 import com.ragnar.eduapp.ui.theme.*
 import com.ragnar.eduapp.R
+import com.ragnar.eduapp.data.repository.DBHelper
+import com.ragnar.eduapp.data.repository.LocalDataRepository
 import com.ragnar.eduapp.ui.components.ChapterSelectionModel
 import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
@@ -165,15 +168,18 @@ fun StudySessionSetupScreen(navController: NavController) {
                         DebugLogger.debugLog("StudySessionSetupScreen","Subject: $selectedSubject")
                         DebugLogger.debugLog("StudySessionSetupScreen","Chapters: $selectedChapters")
 
-                        SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_CHAPTER_LIST,
-                            selectedChapters.toString()
-                        )
-                        SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_SYLLABUS, selectedSyllabus)
-                        SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_SUBJECT, selectedSubject)
 
+                        val syllabusResult = LocalDataRepository.updateUserDetail(DBHelper.USER_SYLLABUS, selectedSyllabus)
+                        val subjectResult = LocalDataRepository.updateUserDetail(DBHelper.USER_SUBJECT, selectedSubject)
+                        val chaptersResult = LocalDataRepository.updateChapterList(selectedChapters)
 
-                        navController.navigate("learningIntent")
-
+                        if (syllabusResult && subjectResult && chaptersResult) {
+                            DebugLogger.debugLog("StudySessionSetupScreen", "User detail updated successfully")
+                            navController.navigate("learningIntent")
+                        } else {
+                            DebugLogger.debugLog("StudySessionSetupScreen", "Failed to update user detail")
+                            Toast.makeText(context, "Failed to update user detail", Toast.LENGTH_SHORT).show()
+                        }
                     },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier

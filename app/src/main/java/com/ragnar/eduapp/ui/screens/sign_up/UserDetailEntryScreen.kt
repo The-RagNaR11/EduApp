@@ -59,6 +59,7 @@ import androidx.navigation.NavController
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.core.GoogleSignIn
 import com.ragnar.eduapp.data.dataClass.User
+import com.ragnar.eduapp.data.repository.DBHelper
 import com.ragnar.eduapp.data.repository.LocalDataRepository
 import com.ragnar.eduapp.ui.components.SignUpPageFooterModel
 import com.ragnar.eduapp.ui.theme.AccentBlue
@@ -349,9 +350,12 @@ fun UserDetailEntryScreen(navController: NavController) {
                                     """.trimIndent()
                             )
 
-                            val phoneResult: Boolean = LocalDataRepository.updateUserDetail("phone", phoneNumber.trim())
-                            val schoolResult: Boolean = LocalDataRepository.updateUserDetail("school", schoolName.trim())
-                            val ambitionResult: Boolean =LocalDataRepository.updateUserDetail("ambition", ambitionText.trim())
+                            val phoneResult: Boolean = LocalDataRepository.updateUserDetail(
+                                DBHelper.USER_PHONE_NUMBER, phoneNumber.trim())
+                            val schoolResult: Boolean = LocalDataRepository.updateUserDetail(
+                                DBHelper.USER_SCHOOL, schoolName.trim())
+                            val ambitionResult: Boolean =LocalDataRepository.updateUserDetail(
+                                DBHelper.USER_AMBITION, ambitionText.trim())
 
                             if (phoneResult && schoolResult && ambitionResult) {
                                 DebugLogger.debugLog("UserDetailEntryScreen", "User data update successfully")

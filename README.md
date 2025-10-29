@@ -11,11 +11,11 @@
 
 ## 🌟 Overview
 
-EduApp is a modern, AI-powered educational platform built with Jetpack Compose for Android. It leverages advanced language models (Groq LLM) to provide personalized tutoring experiences, complete with visual concept mapping, speech-to-text input, and text-to-speech output with lip-sync animations.
+EduApp is a modern, AI-powered educational platform built with Jetpack Compose for Android. It leverages advanced language models (Google Gemini) to provide personalized tutoring experiences, complete with visual concept mapping, speech-to-text input, and text-to-speech output with lip-sync animations.
 
 ### 🎯 Key Highlights
 
-- **AI-Powered Tutoring** - Conversational learning with Groq's LLaMA 4 Scout model
+- **AI-Powered Tutoring** - Conversational learning with Google's Gemini model
 - **Visual Learning** - Dynamic, interactive concept maps generated from AI responses
 - **Multi-Language Support** - English, Hindi, Kannada, Telugu with automatic detection
 - **Voice Integration** - Speech-to-text input and text-to-speech with animated avatars
@@ -76,7 +76,7 @@ EduApp is a modern, AI-powered educational platform built with Jetpack Compose f
 - **Minimum SDK** - API 24 (Android 7.0)
 - **Target SDK** - API 34 (Android 14)
 - **Kotlin** - 1.9.0 or later
-- **Groq API Key** - Required for AI chatbot functionality
+- **Google Gemini API Key** - Required for AI chatbot functionality
 
 ### Installation
 
@@ -98,7 +98,7 @@ EduApp is a modern, AI-powered educational platform built with Jetpack Compose f
    <resources>
        <string name="app_name">EduApp</string>
        <string name="web_client_id">YOUR_GOOGLE_OAUTH_CLIENT_ID</string>
-       <string name="chat_bot_api_key">YOUR_GROQ_API_KEY</string>
+       <string name="chat_bot_api_key">YOUR_GEMINI_API_KEY</string>
    </resources>
    ```
 
@@ -120,12 +120,11 @@ EduApp is a modern, AI-powered educational platform built with Jetpack Compose f
 5. Add your app's SHA-1 fingerprint
 6. Copy the Web Client ID
 
-#### Groq API Key
-1. Visit [Groq Console](https://console.groq.com/)
-2. Sign up for an account
-3. Navigate to API Keys section
-4. Generate a new API key
-5. Copy the key to your `strings.xml`
+#### Google Gemini API Key
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Generate a new API key
+4. Copy the key to your `strings.xml`
 
 ---
 
@@ -142,7 +141,7 @@ app/
 │   │   │   └── chatBot/                       # AI chatbot core
 │   │   │       ├── ChatViewModel.kt           # Chat state management
 │   │   │       ├── ChatViewModelFactory.kt    # ViewModel factory
-│   │   │       └── GroqLLMClient.kt          # Groq API client
+│   │   │       └── GeminiLLMClient.kt       # Gemini API client
 │   │   │
 │   │   ├── data/                              # Data layer
 │   │   │   ├── model/                         # Data models
@@ -267,7 +266,7 @@ LanguageSelection → GoogleSignIn → UserDetails → StudentAssessment
 ```
 User Input → ChatViewModel.sendMessage()
     ↓
-GroqLLMClient.queryLLM()
+GeminiLLMClient.queryLLM()
     ↓
 Extract Answer + Concept Map JSON
     ↓
@@ -343,28 +342,24 @@ TextOnPrimary = #FFFFFF
 
 ## 🔌 API Integration
 
-### Groq LLM API
+### Google Gemini API
 
-**Endpoint:** `https://api.groq.com/openai/v1/chat/completions`
+**Endpoint:** `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`
 
-**Model:** `meta-llama/llama-4-scout-17b-16e-instruct`
+**Model:** `gemini-1.5-flash`
 
 **Request Format:**
 ```json
 {
-  "model": "meta-llama/llama-4-scout-17b-16e-instruct",
-  "messages": [
+  "contents": [
     {
-      "role": "system",
-      "content": "System prompt with concept map instructions..."
-    },
-    {
-      "role": "user",
-      "content": "User's question"
+      "parts": [
+        {
+          "text": "System prompt with concept map instructions...\n\nUser Query: User's question"
+        }
+      ]
     }
-  ],
-  "temperature": 0.7,
-  "max_tokens": 1024
+  ]
 }
 ```
 
@@ -546,7 +541,7 @@ implementation("androidx.media3:media3-common:1.2.0")
 
 2. **ProGuard Configuration**
    ```proguard
-   # Keep Groq API models
+   # Keep Gemini API models
    -keep class com.ragnar.eduapp.data.** { *; }
    
    # Keep Compose runtime
@@ -580,7 +575,7 @@ implementation("androidx.media3:media3-common:1.2.0")
 - ✅ Enable Google Sign-In API
 
 **Issue: AI responses not appearing**
-- ✅ Verify Groq API key is correct
+- ✅ Verify Gemini API key is correct
 - ✅ Check internet connection
 - ✅ Review Logcat for API errors
 
@@ -706,7 +701,7 @@ copies or substantial portions of the Software.
 
 ## 🙏 Acknowledgments
 
-- **Groq** - For providing fast LLM inference
+- **Google Gemini** - For providing advanced LLM inference
 - **Google** - For Authentication APIs
 - **Jetpack Compose** - For modern Android UI
 - **Android Open Source Project** - For TTS/STT APIs

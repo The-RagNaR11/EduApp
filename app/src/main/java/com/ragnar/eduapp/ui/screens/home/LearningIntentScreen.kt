@@ -1,5 +1,6 @@
 package com.ragnar.eduapp.ui.screens.home
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,8 +40,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.ragnar.ai_tutor.ui.components.IntentListViewModel
+import com.ragnar.eduapp.ui.components.IntentListViewModel
 import com.ragnar.eduapp.R
+import com.ragnar.eduapp.data.repository.DBHelper
+import com.ragnar.eduapp.data.repository.LocalDataRepository
 import com.ragnar.eduapp.ui.components.LearnerTitleModel
 import com.ragnar.eduapp.ui.theme.AccentBlue
 import com.ragnar.eduapp.ui.theme.AccentGreen
@@ -54,6 +57,7 @@ import com.ragnar.eduapp.ui.theme.TextOnPrimary
 import com.ragnar.eduapp.ui.theme.TextPrimary
 import com.ragnar.eduapp.ui.theme.TextSecondary
 import com.ragnar.eduapp.ui.theme.White
+import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.SharedPreferenceUtils
 
 
@@ -257,13 +261,17 @@ fun LearningLatentScreen(navController: NavController) {
             Spacer(modifier = Modifier.padding(20.dp))
             Button(
                 onClick = {
-                    SharedPreferenceUtils.saveUserInfo(context, SharedPreferenceUtils.KEY_LEARNING_INTENT, selectedOption)
 
-                    navController.navigate("chatBot") {
-                        popUpTo(0) { inclusive = true }
+                    val result = LocalDataRepository.updateUserDetail(DBHelper.USER_LEARNING_INTENT, selectedOption)
+                    if (result) {
+                        DebugLogger.debugLog("LearningIntentScreen", "Updated user learning intent successfully")
+                        navController.navigate("chatBot") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    } else {
+                        DebugLogger.errorLog("LearningIntentScreen", "Failed to update user learning intent")
+                        Toast.makeText(context, "Failed to update user learning intent", Toast.LENGTH_SHORT).show()
                     }
-
-
                 },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier

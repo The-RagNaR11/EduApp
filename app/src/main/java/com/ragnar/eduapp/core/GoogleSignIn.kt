@@ -17,7 +17,7 @@ import androidx.media3.common.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.ragnar.eduapp.R
-import com.ragnar.eduapp.data.model.GoogleUserInfo
+import com.ragnar.eduapp.data.dataClass.GoogleUserInfo
 import com.ragnar.eduapp.utils.DebugLogger
 import com.ragnar.eduapp.utils.GoogleUserInfoExtractor
 

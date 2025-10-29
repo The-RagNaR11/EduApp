@@ -3,7 +3,6 @@ package com.ragnar.eduapp.data.repository
 import android.content.Context
 import com.ragnar.eduapp.data.dataClass.ChatMessageModel
 import com.ragnar.eduapp.data.dataClass.User
-import org.intellij.lang.annotations.Language
 import org.json.JSONArray
 
 /**
@@ -51,11 +50,12 @@ object LocalDataRepository {
                     phone = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_PHONE_NUMBER)) ?: "",
                     school = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SCHOOL)) ?: "",
                     ambition = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_AMBITION)) ?: "",
-                    `class` = cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.USER_CLASS)),
+                    userClass = cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.USER_CLASS)),
                     pace = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_PACE)) ?: "",
                     chapterList = parseChapterList(cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_CHAPTER_LIST))),
                     subject = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SUBJECT)) ?: "",
                     syllabus = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SYLLABUS)) ?: "",
+                    learningIntent = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_LEARNING_INTENT)) ?: "",
                     isActive = cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.IS_ACTIVE))
                 )
             }
@@ -87,6 +87,18 @@ object LocalDataRepository {
     fun updateUserDetail(key: String, value: String): Boolean {
         return dbHelper.updateUserDetail(key, value) > 0
     }
+
+    /**
+     * Updates the active user's chapter list in the database.
+     * The list is stored as a comma-separated string.
+     * @param chapterList List of chapter names or IDs
+     * @return Number of rows updated (1 if success, 0 if failure)
+     */
+    fun updateChapterList(chapterList: List<String>): Boolean {
+        val jsonArray = JSONArray(chapterList)
+        return dbHelper.updateUserDetail(DBHelper.USER_CHAPTER_LIST, jsonArray.toString()) > 0
+    }
+
 
     // -------------------------------------------------
     //  CHAT METHODS

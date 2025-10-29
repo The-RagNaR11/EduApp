@@ -97,7 +97,7 @@ fun ChatBotScreen(
 
     val chatBotController: ChatViewModel = viewModel(
         factory = ChatViewModelFactory(
-            apiKey = stringResource(R.string.chat_bot_api_key),
+            apiKey = stringResource(R.string.gemini_api_key),
             userClass = userClass,
             nodeNumber = nodeNumber,
             maxWord = maxWord

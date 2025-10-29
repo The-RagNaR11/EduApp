@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ragnar.eduapp.R
+import com.ragnar.eduapp.data.repository.DBHelper
 import com.ragnar.eduapp.data.repository.LocalDataRepository
 import com.ragnar.eduapp.ui.components.DropDownMenuModel
 import com.ragnar.eduapp.ui.theme.BackgroundPrimary
@@ -167,8 +168,8 @@ fun StudentLevelAssessmentScreen(navController: NavController) {
                     onClick = {
                         DebugLogger.debugLog("StudentLevelAssessmentScreen", "Class: $selectedClass \n Learning Pace: $selectedPace")
 
-                        val paceResult = LocalDataRepository.updateUserDetail("pace", selectedPace)
-                        val classResult = LocalDataRepository.updateUserDetail("class", selectedClass)
+                        val paceResult = LocalDataRepository.updateUserDetail(DBHelper.USER_PACE, selectedPace)
+                        val classResult = LocalDataRepository.updateUserDetail(DBHelper.USER_CLASS, selectedClass)
 
                         if (paceResult && classResult) {
                             DebugLogger.debugLog("StudentLevelAssessmentScreen", "User detail updated successfully")

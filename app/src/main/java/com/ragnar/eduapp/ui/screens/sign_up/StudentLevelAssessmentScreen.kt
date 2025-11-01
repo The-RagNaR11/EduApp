@@ -169,7 +169,10 @@ fun StudentLevelAssessmentScreen(navController: NavController) {
                         DebugLogger.debugLog("StudentLevelAssessmentScreen", "Class: $selectedClass \n Learning Pace: $selectedPace")
 
                         val paceResult = LocalDataRepository.updateUserDetail(DBHelper.USER_PACE, selectedPace)
+//                        val userClass: Int = selectedClass.toIntOrNull() ?: -1
                         val classResult = LocalDataRepository.updateUserDetail(DBHelper.USER_CLASS, selectedClass)
+
+                        DebugLogger.debugLog("StudentLevelAssessmentScreen", "User\n${LocalDataRepository.getActiveUser().toString()}")
 
                         if (paceResult && classResult) {
                             DebugLogger.debugLog("StudentLevelAssessmentScreen", "User detail updated successfully")

@@ -18,7 +18,7 @@ class ChatViewModel(
     nodeNumber: String,
     maxWrd: String
 ) : ViewModel() {
-    private val llmClient = GroqLLMClient(apiKey, userClass, nodeNumber, maxWrd)
+    private val llmClient = GeminiLLMClient(apiKey, userClass, nodeNumber, maxWrd)
 
     // Chat messages
     private val _messages = MutableStateFlow<List<ChatMessageModel>>(emptyList())

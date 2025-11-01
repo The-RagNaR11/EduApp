@@ -17,49 +17,47 @@ import com.ragnar.eduapp.ui.screens.sign_up.LanguageSelectionScreen
 import com.ragnar.eduapp.ui.screens.sign_up.StudentLevelAssessmentScreen
 import com.ragnar.eduapp.ui.screens.sign_up.UserDetailEntryScreen
 import com.ragnar.eduapp.ui.theme.AppTheme
+import com.ragnar.eduapp.utils.DebugLogger
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        LocalDataRepository.init(this)
         setContent {
             AppTheme {
                 MainScreen()
             }
         }
-        LocalDataRepository.init(this)
+
     }
 }
 
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
+    var startDestination: String
+    try {
+        startDestination = when {
+            !NavigationUtil.isLoggedIn() -> "languageSelection"
 
-    val startDestination = when {
+            NavigationUtil.isLoggedIn() && !NavigationUtil.isUserDetailAvailable() -> "userDetailEntry"
 
-        NavigationUtil.isLoggedIn() && NavigationUtil.isUserDetailAvailable() -> {
-            if (NavigationUtil.isLevelAssessmentSetUp()) {
+            NavigationUtil.isLoggedIn() && NavigationUtil.isUserDetailAvailable() && !NavigationUtil.isLevelAssessmentSetUp() ->
                 "studentLevelAssessment"
-            } else {
-                if (NavigationUtil.isStudySessionSetUp()) {
-                    "studySessionSetUp"
-                } else {
-                    if (NavigationUtil.isIntentSetUp()) {
-                        "learningIntent"
-                    } else {
-                        "chatBot"
-                    }
-                }
-            }
+
+            NavigationUtil.isLoggedIn() && NavigationUtil.isLevelAssessmentSetUp() && !NavigationUtil.isStudySessionSetUp() ->
+                "studySessionSetUp"
+
+            NavigationUtil.isLoggedIn() && NavigationUtil.isStudySessionSetUp() && !NavigationUtil.isIntentSetUp() ->
+                "learningIntent"
+
+            else -> "chatBot"
         }
 
-        NavigationUtil.isLoggedIn() && !NavigationUtil.isUserDetailAvailable() -> {
-            "userDetailEntry"
-        }
-
-
-        else -> "languageSelection"
+    }catch (e: Exception) {
+        DebugLogger.errorLog("MainActivity", "Using fallback \n $e")
+        startDestination = "languageSelection"
     }
 
 

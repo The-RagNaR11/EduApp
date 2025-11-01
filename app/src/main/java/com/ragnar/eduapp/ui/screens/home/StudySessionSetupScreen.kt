@@ -26,6 +26,7 @@ import androidx.navigation.NavController
 import com.ragnar.eduapp.ui.components.DropDownMenuModel
 import com.ragnar.eduapp.ui.theme.*
 import com.ragnar.eduapp.R
+import com.ragnar.eduapp.data.dataClass.User
 import com.ragnar.eduapp.data.repository.DBHelper
 import com.ragnar.eduapp.data.repository.LocalDataRepository
 import com.ragnar.eduapp.ui.components.ChapterSelectionModel
@@ -176,6 +177,11 @@ fun StudySessionSetupScreen(navController: NavController) {
                         if (syllabusResult && subjectResult && chaptersResult) {
                             DebugLogger.debugLog("StudySessionSetupScreen", "User detail updated successfully")
                             navController.navigate("learningIntent")
+                            /**
+                             * For Debug purpose only
+                             */
+                            val user: User? = LocalDataRepository.getActiveUser()
+                            DebugLogger.debugLog("ActiveUser", "User: ${user.toString()}")
                         } else {
                             DebugLogger.debugLog("StudySessionSetupScreen", "Failed to update user detail")
                             Toast.makeText(context, "Failed to update user detail", Toast.LENGTH_SHORT).show()

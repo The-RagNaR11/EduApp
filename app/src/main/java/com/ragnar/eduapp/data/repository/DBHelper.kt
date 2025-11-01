@@ -31,7 +31,7 @@ class DBHelper(context: Context) :
         const val USER_PHONE_NUMBER = "phone"
         const val USER_SCHOOL = "school"
         const val USER_AMBITION = "ambition"
-        const val USER_CLASS = "class"
+        const val USER_CLASS = "user_class"
         const val USER_PACE = "pace"
         const val USER_CHAPTER_LIST = "chapter_list"
         const val USER_SUBJECT = "subject"
@@ -59,7 +59,7 @@ class DBHelper(context: Context) :
                 $USER_PHONE_NUMBER TEXT,
                 $USER_SCHOOL TEXT,
                 $USER_AMBITION TEXT,
-                $USER_CLASS INTEGER,
+                $USER_CLASS TEXT,
                 $USER_PACE TEXT,
                 $USER_CHAPTER_LIST TEXT,
                 $USER_SUBJECT TEXT,

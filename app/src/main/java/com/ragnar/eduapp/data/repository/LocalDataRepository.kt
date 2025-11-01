@@ -50,7 +50,7 @@ object LocalDataRepository {
                     phone = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_PHONE_NUMBER)) ?: "",
                     school = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SCHOOL)) ?: "",
                     ambition = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_AMBITION)) ?: "",
-                    userClass = cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.USER_CLASS)),
+                    userClass = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_CLASS)),
                     pace = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_PACE)) ?: "",
                     chapterList = parseChapterList(cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_CHAPTER_LIST))),
                     subject = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SUBJECT)) ?: "",

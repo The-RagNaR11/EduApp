@@ -1,6 +1,5 @@
 package com.ragnar.eduapp.core.chatBot
 
-import android.util.Log
 import com.ragnar.eduapp.utils.DebugLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,7 +11,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-class GroqLLMClient(
+class LLMClient(
     private val apiKey: String,
     private val userClass: String,
     private val nodeNumber: String,

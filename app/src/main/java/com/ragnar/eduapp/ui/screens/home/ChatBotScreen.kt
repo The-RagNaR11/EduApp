@@ -64,6 +64,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ragnar.eduapp.R
 import com.ragnar.eduapp.core.chatBot.ChatViewModel
 import com.ragnar.eduapp.core.chatBot.ChatViewModelFactory
+import com.ragnar.eduapp.data.repository.LocalDataRepository
 import com.ragnar.eduapp.ui.components.ChatMessageBubbleModel
 import com.ragnar.eduapp.ui.components.ConceptMapModel
 import com.ragnar.eduapp.ui.components.ExpandableTextOutput
@@ -90,14 +91,16 @@ fun ChatBotScreen(
     sttController: SpeechToText = viewModel(), // SpeechToText core Util
 ) {
 
+    DebugLogger.debugLog("UserDetail", LocalDataRepository.getActiveUser().toString())
+
     val context = LocalContext.current
-    val userClass: String = SharedPreferenceUtils.getUserInfo(context, SharedPreferenceUtils.KEY_CLASS).toString()
-    val nodeNumber = "10";
+    val userClass = "10"
+    val nodeNumber = "8";
     val maxWord = "100"
 
     val chatBotController: ChatViewModel = viewModel(
         factory = ChatViewModelFactory(
-            apiKey = stringResource(R.string.gemini_api_key),
+            apiKey = stringResource(R.string.api_key),
             userClass = userClass,
             nodeNumber = nodeNumber,
             maxWord = maxWord

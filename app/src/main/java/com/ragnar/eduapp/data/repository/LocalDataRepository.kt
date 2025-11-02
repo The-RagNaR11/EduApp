@@ -19,9 +19,16 @@ object LocalDataRepository {
      */
     fun init(context: Context) {
         if (!::dbHelper.isInitialized) {
-            dbHelper = DBHelper(context)
+            val externalPath = ExternalDBPathManager.getDbPath(context)
+
+            dbHelper = if (externalPath != null) {
+                DBHelper(context, externalPath)
+            } else {
+                DBHelper(context)
+            }
         }
     }
+
 
     // -------------------------------------------------
     //  USER METHODS
@@ -50,7 +57,7 @@ object LocalDataRepository {
                     phone = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_PHONE_NUMBER)) ?: "",
                     school = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SCHOOL)) ?: "",
                     ambition = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_AMBITION)) ?: "",
-                    userClass = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_CLASS)),
+                    userClass = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_CLASS)) ?: "",
                     pace = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_PACE)) ?: "",
                     chapterList = parseChapterList(cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_CHAPTER_LIST))),
                     subject = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SUBJECT)) ?: "",
@@ -98,6 +105,38 @@ object LocalDataRepository {
         val jsonArray = JSONArray(chapterList)
         return dbHelper.updateUserDetail(DBHelper.USER_CHAPTER_LIST, jsonArray.toString()) > 0
     }
+
+    fun getAllUsers(): List<User> {
+        val users = mutableListOf<User>()
+
+        dbHelper.getAllUsers().use { cursor ->
+            if (cursor.moveToFirst()) {
+                do {
+                    val user = User(
+                        id = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_ID)),
+                        email = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_EMAIL)),
+                        name = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_NAME)),
+                        language = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_LANGUAGE)) ?: "",
+                        profilePicUrl = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_PROFILE_PIC_URL)) ?: "",
+                        phone = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_PHONE_NUMBER)) ?: "",
+                        school = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SCHOOL)) ?: "",
+                        ambition = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_AMBITION)) ?: "",
+                        userClass = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_CLASS)),
+                        pace = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_PACE)) ?: "",
+                        chapterList = parseChapterList(cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_CHAPTER_LIST))),
+                        subject = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SUBJECT)) ?: "",
+                        syllabus = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_SYLLABUS)) ?: "",
+                        learningIntent = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.USER_LEARNING_INTENT)) ?: "",
+                        isActive = cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.IS_ACTIVE))
+                    )
+                    users.add(user)
+                } while (cursor.moveToNext())
+            }
+        }
+
+        return users
+    }
+
 
 
     // -------------------------------------------------

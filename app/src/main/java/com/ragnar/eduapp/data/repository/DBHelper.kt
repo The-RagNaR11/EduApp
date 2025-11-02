@@ -10,8 +10,8 @@ import android.database.sqlite.SQLiteOpenHelper
  * Handles all local SQLite database operations for EduApp.
  * Stores user profiles and AI chat history in two tables: users and chats.
  */
-class DBHelper(context: Context) :
-    SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class DBHelper(context: Context, customPath: String? = null) :
+    SQLiteOpenHelper(context, customPath ?: DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         private const val DATABASE_NAME = "eduapp.db"

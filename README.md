@@ -640,34 +640,6 @@ implementation("androidx.media3:media3-common:1.2.0")
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Here's how to get started:
-
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Make your changes**
-4. **Follow coding standards**
-    - Use Kotlin conventions
-    - Add KDoc comments
-    - Write unit tests
-5. **Commit with clear messages**
-   ```bash
-   git commit -m "Add: Amazing feature description"
-   ```
-6. **Push and create Pull Request**
-
-### Coding Standards
-- Follow [Kotlin style guide](https://kotlinlang.org/docs/coding-conventions.html)
-- Use meaningful variable names
-- Keep functions small and focused
-- Write self-documenting code
-- Add comments for complex logic
-
----
 
 ## 📄 License
 
@@ -692,7 +664,7 @@ copies or substantial portions of the Software.
 ---
 
 ## 👨‍💻 Author
-
+**
 **Shubhash Singh**
 - GitHub: [@shubhash-singh](https://github.com/shubhash-singh)
 - Project Link: [https://github.com/The-RagNaR11/EduApp](https://github.com/The-RagNaR11/EduApp)
